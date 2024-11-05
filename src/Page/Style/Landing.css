@@ -1,0 +1,81 @@
+.recipe__layout{
+    padding: 40px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    
+    .tag{
+        text-align: center;
+        margin-bottom: 20px;
+    }
+
+   form{
+    display: flex;
+    justify-content: center;
+    width: 500px;
+
+
+     input{
+        padding: 12px;
+        width: 100%;
+        border-radius: 12px 0 0 12px;
+        border: 1px solid grey;
+    }
+
+    button{
+        all: unset;
+        padding: 12px;
+        border-radius: 0 12px 12px 0;
+        background: rgb(172, 172, 172);
+        border: 1px solid grey;
+        cursor: pointer;
+    }
+    button:hover{
+        background: rgb(150, 150, 150);
+    }
+   }
+
+   .show__loading{
+    margin-top: 10px;
+   }
+
+   .results{
+    
+    
+    .meal__result{
+
+        .search__result{
+            margin-bottom: 30px;
+        }
+
+       .meal__list{
+            margin-bottom: 10px;
+            display: flex;
+            box-shadow: rgba(0, 0, 0, 0.24) 0px 3px 8px;
+            background: rgb(233, 230, 230);
+            padding: 5px;
+            border-radius: 12px;
+
+            .meal__name{
+                font-size: 1.3rem;
+            }
+
+            .content{
+                padding: 6px;
+                width: 100%;
+
+                .view__recipe{
+                    display: flex;
+                    justify-content: center;
+                    align-items: flex-end;
+                }
+            }
+       }
+
+        .meal__img{
+            width: 100px;
+            border-radius: 12px;
+        }
+    }
+   }
+}
