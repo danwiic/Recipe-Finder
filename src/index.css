@@ -4,6 +4,12 @@
   font-family: 'Inter', sans-serif;
 }
 
+html, body {
+  height: 100%; 
+  margin: 0;    
+  background-color: #C5D3E8;
+}
+
 h1{
   font-size: 3rem;
 }
