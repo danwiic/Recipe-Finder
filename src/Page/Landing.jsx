@@ -1,63 +1,62 @@
-import { useState } from "react";
-import Layout from "../Components/Layout";
-import { FaSearch } from "react-icons/fa";
-import Loader from '../Components/Loader'; 
-import './Style/Landing.css';
-import axios from "axios";
-import Popup from "../Components/Popup";
+import { useState } from "react"
+import Layout from "../Components/Layout"
+import { FaSearch } from "react-icons/fa"
+import Loader from '../Components/Loader'
+import './Style/Landing.css'
+import axios from "axios"
+import Popup from "../Components/Popup"
 
 
 export default function Landing() {
-    const [search, setSearch] = useState({ search: "" });
-    const [results, setResults] = useState([]); 
-    const [loading, setLoading] = useState(false);  
-    const [error, setError] = useState(null);
-    const [open, setOpen] = useState(false);
-    const [selectedMeal, setSelectedMeal] = useState(null);  // Track selected meal
+    const [search, setSearch] = useState({ search: "" })
+    const [results, setResults] = useState([])
+    const [loading, setLoading] = useState(false) 
+    const [error, setError] = useState(null)
+    const [open, setOpen] = useState(false)
+    const [selectedMeal, setSelectedMeal] = useState(null)
 
     const handleChange = (e) => {
-        const { name, value } = e.target;
+        const { name, value } = e.target
         setSearch(prevState => ({
             ...prevState,
             [name]: value
-        }));
-    };
+        }))
+    }
 
     const handleSubmit = async (e) => {
-        e.preventDefault();
+        e.preventDefault()
         
-        if (!search.search.trim()) return; // If search input is empty, do nothing
-
-        setLoading(true);  
-        setError(null);    
-        setResults([]);   
+        if (!search.search.trim()) return
+        setLoading(true)
+        setError(null)
+        setResults([])
 
         try {
             const { data } = await axios.get(`https://www.themealdb.com/api/json/v1/1/search.php?s=${search.search}`);
             
             if (data.meals) {
-                setResults(data.meals); // Set results if found
+                setResults(data.meals)
             } else {
-                setError("No meals found for your search.");
+                setError("No meals found for your search.")
             }
         } catch (e) {
-            setError("An error occurred while fetching the data.");
-            console.error(e);
+            setError("An error occurred while fetching the data.")
+            console.error(e)
         } finally {
-            setLoading(false);
+            setLoading(false)
         }
-    };
+    }
 
     const handleViewRecipe = (meal) => {
-        setSelectedMeal(meal);
-        setOpen(true);
-    };
+        setSelectedMeal(meal)
+        setOpen(true)
+    }
 
     return (
         <div className="recipe__container">
             <Layout>
                 <div className="recipe__layout">
-                    <h2 className="tag">Discover, Cook, Enjoy!</h2>
+                    <h2 className="tag">Search, Cook, Enjoy!</h2>
                     <form onSubmit={handleSubmit}>
                         <input
                             type="text"
