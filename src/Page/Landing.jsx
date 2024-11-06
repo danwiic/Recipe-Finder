@@ -139,7 +139,7 @@ export default function Landing() {
                             if (ingredient) {
                                 return (
                                     <li key={index} className="meal__ingredient">
-                                        {ingredient} - {measure}
+                                        {ingredient} - <span className="meal__measure">{measure}</span>
                                     </li>
                                 );
                             }

@@ -4,6 +4,9 @@
     display: flex;
     flex-direction: column;
     align-items: center;
+    @media(width <= 1000px){
+        padding: 40px;
+    }
     
     .tag{
         text-align: center;
@@ -14,6 +17,9 @@
     display: flex;
     justify-content: center;
     width: 500px;
+    @media(width <= 1000px){
+        width: 400px;
+    }
 
 
      input{
@@ -106,6 +112,10 @@
         width: 500px;
         object-fit: contain;
         height: auto;
+
+        @media (width <= 1000px){
+            display: none;
+        }
        }
     
    .meal__details{
@@ -115,10 +125,19 @@
     .meal__ingredient{
         text-indent: .7%;
         list-style-type: none;
+        line-height: 30px;
+
+        .meal__measure{
+            font-style: italic;
+        }
     }
 
     .meal__instructions{
         text-indent: 10%;
+        line-height: 25px;
+        font-size: 1rem;
+
+       
     }
 
    }
