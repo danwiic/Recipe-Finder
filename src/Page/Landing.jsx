@@ -48,7 +48,6 @@ export default function Landing() {
         }
     };
 
-    // Function to handle meal selection for the popup
     const handleViewRecipe = (meal) => {
         setSelectedMeal(meal);
         setOpen(true);
@@ -70,7 +69,6 @@ export default function Landing() {
                         <button 
                             className="btn__search" 
                             type="submit"
-                            disabled={loading}  // Disable search button while loading
                         >
                             <FaSearch />
                         </button>

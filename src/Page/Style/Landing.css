@@ -11,6 +11,10 @@
     .tag{
         text-align: center;
         margin-bottom: 20px;
+
+        @media(width <= 1000px){
+            font-size: 1.4rem;
+        }
     }
 
    form{
@@ -51,6 +55,7 @@
     
     .meal__result{
 
+
         .search__result{
             margin-bottom: 20px;
         }
@@ -63,6 +68,12 @@
             padding: 5px;
             border-radius: 12px;
             width: 100%;
+
+            @media(width <= 1000px){
+                width: 100%;
+                margin: auto;
+                margin-bottom: 13px;
+            }
 
             .meal__name{
                 font-size: 1.3rem;
@@ -101,44 +112,43 @@
    }
 }
 
-.popup__layout{
-    overflow: scroll;
+.popup__layout {
     max-height: 550px;
     display: flex;
     width: 100%;
-    flex-direction: row;
+ 
 
-    .popup__img{
+    .popup__img {
         width: 500px;
         object-fit: contain;
         height: auto;
+        position: sticky;
 
-        @media (width <= 1000px){
+        @media (max-width: 1000px) {
             display: none;
         }
-       }
-    
-   .meal__details{
-    padding: 30px;
-   
+    }
 
-    .meal__ingredient{
-        text-indent: .7%;
-        list-style-type: none;
-        line-height: 30px;
+    .meal__details {
+        padding: 30px;
+        flex-grow: 1;
+        overflow-y: auto;
+        max-height: 550px;
 
-        .meal__measure{
-            font-style: italic;
+        .meal__ingredient {
+            text-indent: .7%;
+            list-style-type: none;
+            line-height: 30px;
+
+            .meal__measure {
+                font-style: italic;
+            }
+        }
+
+        .meal__instructions {
+            text-indent: 10%;
+            line-height: 25px;
+            font-size: 1rem;
         }
     }
-
-    .meal__instructions{
-        text-indent: 10%;
-        line-height: 25px;
-        font-size: 1rem;
-
-       
-    }
-
-   }
 }
