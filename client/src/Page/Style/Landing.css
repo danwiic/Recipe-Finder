@@ -1,0 +1,164 @@
+.recipe__layout{
+    height: 100%;
+    padding: 40px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+
+    @media(width <= 1000px){
+        padding: 40px;
+    }
+    
+    .tag{
+        text-align: center;
+        margin-bottom: 20px;
+        text-shadow: 2px 2px #95c57f;
+        font-style: italic;
+
+        @media(width <= 1000px){
+            font-size: 1.4rem;
+        }
+    }
+
+   form{
+    display: flex;
+    justify-content: center;
+    width: 500px;
+    @media(width <= 1000px){
+        width: 400px;
+    }
+
+    input[type=text]{
+        background-color: white;
+        background-image: url('search.png');
+        background-position: 10px 10px; 
+        background-size: 20px;
+        background-repeat: no-repeat;
+        padding: 12px 20px 12px 40px;
+        background-position: 10px 12px;
+        width: 100%;
+        border-radius: 12px 0 0 12px;
+        border: 1px solid grey;
+    }
+
+    button{
+        all: unset;
+        padding: 12px;
+        border-radius: 0 12px 12px 0;
+        background: rgb(172, 172, 172);
+        border: 1px solid grey;
+        cursor: pointer;
+    }
+    button:hover{
+        background: rgb(150, 150, 150);
+    }
+   }
+
+   .show__loading{
+    margin-top: 10px;
+   }
+
+   .results{
+    
+    
+    .meal__result{
+
+
+        .search__result{
+            margin-bottom: 10px;
+            font-size: 1.3rem;
+        }
+
+       .meal__list{
+            margin-bottom: 13px;
+            display: flex;
+            box-shadow: rgba(0, 0, 0, 0.24) 0px 3px 8px;
+            background: #FFF8DE;
+            padding: 5px;
+            border-radius: 12px;
+            width: 100%;
+
+            @media(width <= 1000px){
+                width: 100%;
+                margin: auto;
+                margin-bottom: 13px;
+            }
+
+            .meal__name{
+                font-size: 1.3rem;
+                margin-bottom: 40px;
+                font-weight: 600;
+            }
+
+            .content{
+                padding: 6px;
+                width: 100%;
+
+                .content__details{
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+
+                    .view__recipe{
+                        padding: 10px;
+                        background-color: #abe093;
+                        border-radius: 12px;
+                        cursor: pointer;
+                        border: none;
+                        font-weight: 600;
+                        color: rgb(62, 61, 61);
+                        box-shadow: rgba(60, 64, 67, 0.3) 0px 1px 2px 0px, rgba(60, 64, 67, 0.15) 0px 1px 3px 1px;
+                    }
+                    .view__recipe:hover{
+                        background-color: #5a8746;
+                    }
+                }
+            }
+       }
+
+        .meal__img{
+            width: 100px;
+            border-radius: 12px;
+        }
+    }
+   }
+}
+
+.popup__layout {
+    max-height: 550px;
+    display: flex;
+    width: 100%;
+ 
+
+    .meal__video {
+        width: 50%;
+        height: auto;
+        position: sticky;
+
+        @media (max-width: 1000px) {
+            display: none;
+        }
+    }
+
+    .meal__details {
+        padding: 30px;
+        flex-grow: 1;
+        overflow-y: auto;
+        max-height: 550px;
+
+        .meal__ingredient {
+            list-style: square;
+            line-height: 30px;
+
+            .meal__measure {
+                font-style: italic;
+                font-weight: bold;
+            }
+        }
+
+        .meal__instructions {
+            line-height: 25px;
+            font-size: 1rem;
+        }
+    }
+}
