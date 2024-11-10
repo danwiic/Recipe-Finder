@@ -1,3 +1,21 @@
+/* inter-regular - latin */
+@font-face {
+  font-display: swap; /* Check https://developer.mozilla.org/en-US/docs/Web/CSS/@font-face/font-display for other options. */
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 400;
+  src: url('../fonts/inter-v18-latin-regular.woff2') format('woff2'); /* Chrome 36+, Opera 23+, Firefox 39+, Safari 12+, iOS 10+ */
+}
+
+/* inter-700 - latin */
+@font-face {
+  font-display: swap; /* Check https://developer.mozilla.org/en-US/docs/Web/CSS/@font-face/font-display for other options. */
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 700;
+  src: url('../fonts/inter-v18-latin-700.woff2') format('woff2'); /* Chrome 36+, Opera 23+, Firefox 39+, Safari 12+, iOS 10+ */
+}
+
 *, 
 *::before, 
 *::after {
@@ -7,14 +25,14 @@
 * {
   margin: 0;
   padding: 0;
-  font-family:  sans-serif;
+  font-family: "Inter", sans-serif;
 }
 
 
 html, body {
   height: 100vh; 
   margin: 0;    
-  background-color: #C5D3E8;
+  background-color: #D6C0B3;
 }
 
 h1{
@@ -33,4 +51,8 @@ h3{
 button{
   font-family: inherit;
   padding: 10px 16px;
+}
+
+a{
+  text-decoration: none;
 }

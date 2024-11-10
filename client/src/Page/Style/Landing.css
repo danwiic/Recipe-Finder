@@ -8,6 +8,11 @@
     @media(width <= 1000px){
         padding: 40px;
     }
+
+    .searchbar{
+        box-shadow: rgba(0, 0, 0, 0.16) 0px 3px 6px, rgba(0, 0, 0, 0.23) 0px 3px 6px;
+        border-radius: 12px;
+    }
     
     .tag{
         text-align: center;
@@ -38,15 +43,16 @@
         background-position: 10px 12px;
         width: 100%;
         border-radius: 12px 0 0 12px;
-        border: 1px solid grey;
+        border: none;
+        outline: none;
     }
 
     button{
         all: unset;
         padding: 12px;
         border-radius: 0 12px 12px 0;
-        background: rgb(172, 172, 172);
-        border: 1px solid grey;
+        background: #FFDBB5;
+        border: none;
         cursor: pointer;
     }
     button:hover{

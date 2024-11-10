@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
-import { BiSolidFoodMenu } from "react-icons/bi";
-import { GiHamburgerMenu } from "react-icons/gi";
+import { GiRadarSweep } from "react-icons/gi";
 import { NavLink } from "react-router-dom";
 import './Style/Navbar.css';
 
@@ -9,16 +8,11 @@ export default function Navbar({children}) {
 
   const navBar = [
     { path: '/', name: "HOME" },
-    { path: '/recipe', name: "MY RECIPE" },
-    { path: '/planner', name: "MEAL PLANNER" },
+    { path: '/favorites', name: "FAVORITES" },
+    { path: '/planner', name: "PLANNER" },
   ];
 
-  const toggleMobileMenu = () => {
-    setActive(!isActive);
-  }
-
   const isLoginPage = location.pathname === '/login' || location.pathname === '/signup'
-
 
   const myStyle = {
     display: "none",
@@ -30,8 +24,8 @@ export default function Navbar({children}) {
      <div className="navbar__container" style={isLoginPage ? myStyle : {} }>
 
       <div className="logo">
-        <BiSolidFoodMenu />
-        Meal Recipe
+        <GiRadarSweep />
+        RecipeRadar
       </div>
 
       <div className={`nav__links ${isActive ? 'active' : ''}`}>

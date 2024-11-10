@@ -1,11 +1,27 @@
 .navbar__container{
-    background-color:  #A6AEBF;
+    background-color:  #E4E0E1;
     padding: 12px;
     display: flex;
     box-shadow: rgba(0, 0, 0, 0.16) 0px 3px 6px, rgba(0, 0, 0, 0.23) 0px 3px 6px;
     justify-content: space-between;
     align-items: center;
     z-index: 99;
+
+    .btn__goToLogin{
+        all: unset;
+        border: none;
+        padding: 10px 28px;
+        border-radius: 12px;
+        box-shadow: rgba(0, 0, 0, 0.24) 0px 3px 8px;
+        background-color: #FFDBB5;
+        text-decoration: none;
+        font-weight: 700;
+        color: #493628;
+    }
+
+    .btn__goToLogin:hover{
+        background-color: #e1b98f;
+    }
 
     .nav__links{
         display: flex;
@@ -17,7 +33,7 @@
 
         .nav__list{
             text-decoration: none;
-            color: wheat;
+            color: #493628;
             position: relative;
         }
 
@@ -28,7 +44,7 @@
             left: 0;
             width: 0%;
             height: 4px;
-            background-color: red;
+            background-color: #AB886D;
             border-radius: 2px;
             transition: all 0.5s;
           }
@@ -40,7 +56,7 @@
 
         .nav__list:hover,
         .nav__list.active{
-                color: red;
+                color: #AB886D;
         }
 
     }

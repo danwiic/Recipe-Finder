@@ -58,7 +58,7 @@ export default function Landing() {
             <Layout>
                 <div className="recipe__layout">
                     <h2 className="tag">Search, Cook, Enjoy!</h2>
-                    <form onSubmit={handleSubmit}>
+                    <form onSubmit={handleSubmit} className="searchbar">
                         <input
                             type="text"
                             name="search"
@@ -112,7 +112,7 @@ export default function Landing() {
                 </div> 
             </Layout>
 
-            {/* {open && 
+            {open && 
                 <Popup 
                     trigger={open} 
                     setTrigger={setOpen} 
@@ -158,7 +158,7 @@ export default function Landing() {
                             </div>
                     </div>
                 </Popup>
-            } */}
+            }
         </div>
     );
 }
