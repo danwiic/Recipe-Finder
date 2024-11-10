@@ -19,7 +19,7 @@ export default function Login() {
               <div className="login__form__container">
                   <h2 className="form__header">LOGIN</h2>
                     <form className="login__form" onSubmit={(e) => {e.preventDefault}}>
-                        <label className="form__labels">Username</label>
+                        <label className="form__labels">Username / Email</label>
                         <input type="text" placeholder="Username or email" name="username" />
 
                         <label className="form__labels">Password</label>
