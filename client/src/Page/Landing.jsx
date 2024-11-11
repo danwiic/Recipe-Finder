@@ -6,6 +6,7 @@ import './Style/Landing.css'
 import axios from "axios"
 import Popup from "../Components/Popup"
 import ReactPlayer from 'react-player/youtube'
+import searchIcon from '../../public/search.png'
 
 
 export default function Landing() {
@@ -60,6 +61,7 @@ export default function Landing() {
                     <h2 className="tag">Search, Cook, Enjoy!</h2>
                     <form onSubmit={handleSubmit} className="searchbar">
                         <input
+                            style={{backgroundImage: `url(${searchIcon})`}}
                             type="text"
                             name="search"
                             value={search.search}

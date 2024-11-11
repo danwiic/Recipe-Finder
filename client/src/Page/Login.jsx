@@ -1,6 +1,8 @@
 import { Link } from "react-router-dom"
 import Layout from "../Components/Layout"
 import "./Style/Login.css"
+import userLogo from '/user.png'
+import passLogo from '/password.png'
 Link
 Layout
 
@@ -20,10 +22,18 @@ export default function Login() {
                   <h2 className="form__header">LOGIN</h2>
                     <form className="login__form" onSubmit={(e) => {e.preventDefault}}>
                         <label className="form__labels">Username / Email</label>
-                        <input type="text" placeholder="Username or email" name="username" />
+                        <input 
+                          style={{backgroundImage: `url(${userLogo})`}}
+                          type="text" 
+                          placeholder="Username or email" 
+                          name="username" />
 
                         <label className="form__labels">Password</label>
-                        <input type="password" placeholder="Password" name="password" />
+                        <input 
+                          style={{backgroundImage: `url(${passLogo})`}} 
+                          type="password" 
+                          placeholder="Password" 
+                          name="password" />
 
                         <div className="action">
                           <Link>Forgot Password?</Link>

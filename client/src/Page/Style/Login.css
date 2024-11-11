@@ -93,7 +93,6 @@
 
             input[type=password]{
                 background-color: white;
-                background-image: url('password.png');
                 background-position: 10px 10px; 
                 background-size: 20px;
                 background-repeat: no-repeat;
@@ -102,7 +101,6 @@
 
             input[type=text]{
                 background-color: white;
-                background-image: url('user.png');
                 background-position: 10px 10px; 
                 background-size: 20px;
                 background-repeat: no-repeat;
