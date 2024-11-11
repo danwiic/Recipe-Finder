@@ -1,8 +1,9 @@
 import { Navigate, useLocation, Link } from "react-router-dom";
 import { useUser } from "../Context/UserContext";
 import { useState, useEffect } from "react";
-import Popup from "./Popup";
-Popup
+import Popup2 from "./PopupS.jsx";
+import { CgUnavailable } from "react-icons/cg";
+import "./Style/ProtectedRoute.css"
 
 const ProtectedRoute = ({ children }) => {
   const { user } = useUser();
@@ -12,28 +13,33 @@ const ProtectedRoute = ({ children }) => {
 
   useEffect(() => {
     if (!user) {
-      setOpen(true); // Show modal only if user is not logged in
+      setOpen(true)
     } else {
-      setOpen(false); // Hide modal when user is logged in
+      setOpen(false)
     }
-  }, [user]); // Only run when `user` changes
+  }, [user]);
 
-  // If user is not logged in, redirect to login and show modal
   if (!user) {
     return (
       <>
-       <Popup
+       <Popup2
         trigger={open} 
-        setTrigger={setOpen} 
         >
+        <div className="protected__popup">
+          <div className="message">
+          <CgUnavailable /> <h3>Oops, You're not authorized to access this page!</h3>
+          </div>
 
-            Oops, you must login first to access this page!
-
-            <div>
-            <Link to="/login">Login here</Link>
-
-            </div>
-       </Popup>
+          <div 
+            className="to__login"
+            style={{
+              
+            }}
+          >
+           <Link to="/login"><button>Login here</button></Link>
+          </div>
+        </div>
+       </Popup2>
         
       </>
     );

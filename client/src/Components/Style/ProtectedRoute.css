@@ -1,0 +1,17 @@
+.protected__popup{
+    padding: 40px;
+    display: flex;
+    flex-direction: column;
+
+    .message{
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+
+        svg{
+            font-size: 2rem;
+            text-align: center;
+        }
+    }
+}

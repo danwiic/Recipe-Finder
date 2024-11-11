@@ -9,8 +9,10 @@ import jwt from 'jsonwebtoken'
 const app = express();
 app.use(express.json())
 app.use(cors({
-  origin: ['http://192.168.1.185:5173'],
+  origin: ['http://192.168.1.185:5173', 'http://localhost:5173', 'https://find-meal-recipe.netlify.app'],
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'Access-Control-Allow-Origin'],
+  credentials: true
 }))
 
 app.listen(8800, () => {
