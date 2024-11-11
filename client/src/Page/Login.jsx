@@ -3,6 +3,7 @@ import Layout from "../Components/Layout"
 import "./Style/Login.css"
 import userLogo from '/user.png'
 import passLogo from '/password.png'
+import bg from '/bg1.jpg'
 Link
 Layout
 
@@ -12,7 +13,7 @@ export default function Login() {
   return(
     <>
       <Layout>
-        <div className="login__container">
+        <div className="login__container" style={{backgroundImage: `url(${bg})`}}>
 
           <div className="login__layout">
 

@@ -4,12 +4,13 @@ import "./Style/Signup.css"
 import userLogo from '/user.png'
 import passLogo from '/password.png'
 import emailLogo from '/email.png'
+import bg from '/bg1.jpg'
 
 export default function Signup() {
   return(
     <>
       <Layout>
-        <div className="signup__container">
+        <div className="signup__container" style={{backgroundImage: `url(${bg})`}}>
 
           <div className="signup__layout">
             
@@ -48,7 +49,7 @@ export default function Signup() {
                     name="password"
                     style={{backgroundImage: `url(${passLogo})`}}
                   />
-                  
+
                   <div className="action">
                     <button>Create account</button>
                     <p>Already have an account? <Link to="/login">Login</Link></p>
