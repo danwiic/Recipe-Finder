@@ -1,0 +1,108 @@
+.loading{
+    position: absolute;
+    top: 50%;
+    left: 50%;
+}
+
+.meal__detail__container{
+    padding: 40px;
+    display: flex;
+    flex-direction: column;
+
+    .meal__name{
+        margin-bottom: 20px;
+    }
+    
+
+    .back__btn{
+            display: flex;
+
+        .btn__back{
+            all: unset;
+            display: inherit;
+            justify-content: center;
+            align-items: center;
+            font-size: 1rem;
+            gap: 5px;
+            padding: 12px 30px;
+            background: #493628;
+            border-radius: 8px;
+            cursor: pointer;
+            color: white;
+            font-weight: bold;
+            margin-bottom: 20px;
+
+            svg{
+                font-size: 1.2rem;
+               
+            }
+        }
+        .btn__back:hover{
+            background-color: #32251c;
+        }
+    
+    }
+   
+    .meal__detail__layout{
+        display: inherit;
+        flex-wrap: wrap;
+
+
+        .meal__video__container{
+            display: flex;
+            gap: 20px;
+            width: 100%;
+            margin-bottom: 30px;
+            
+            .meal__nutrition{
+                padding: 20px;
+                margin: auto;
+                width: 100%;
+                text-align: left;
+
+                h2:nth-child(4){
+                    margin-bottom: 20px;
+                }
+                
+                .fav__btn{
+                    all: unset;
+                    display: flex;
+                    align-items: center;
+                    padding: 12px 30px;
+                    align-items: center;
+                    background-color: #493628;
+                    font-weight: bold;
+                    cursor: pointer;
+                    color: white;
+                    border-radius: 8px;
+
+                    svg{
+                        color: black;
+                        margin-right: 5px;
+                    }
+                }
+                .fav__btn:hover{
+                    background-color: #32251c;
+                }
+            }
+        }
+
+        .meal__description{
+
+            .recipe__measurement{
+                font-style: italic;
+                font-weight: bold;
+            }
+
+            h3{
+                margin: 20px 0 10px 0;
+            }
+
+            ol,
+            ul{
+                margin-left: 50px;
+            }
+        }
+        
+    }
+}

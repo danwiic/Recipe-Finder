@@ -23,9 +23,22 @@
     background: white;
     padding: 20px;
     border-radius: 8px;
-    width: 80%;
-    max-width: 100%;
     position: relative;
+    display: flex;
+    flex-direction: column;
+    width: auto;
+    max-width: 90%;
+    max-height: 80%;
+ 
+}
+
+.popup-inner > .content {
+    /* Optional: For controlling internal padding or layout */
+    padding: 10px;
+}
+
+.popup-inner > .content.confirmation {
+    text-align: center;
 }
 
 .close-btn {

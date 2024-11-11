@@ -49,9 +49,11 @@
         all: unset;
         padding: 12px;
         border-radius: 0 12px 12px 0;
-        background: #FFDBB5;
+        background: #493628;
         border: none;
         cursor: pointer;
+        color: rgb(232, 232, 232);
+        font-weight: bold;
     }
     button:hover{
         background: rgb(150, 150, 150);
@@ -80,6 +82,7 @@
             background: #FFF8DE;
             padding: 5px;
             border-radius: 12px;
+            min-width: 700px;
             width: 100%;
 
             @media(width <= 1000px){
@@ -126,43 +129,4 @@
         }
     }
    }
-}
-
-.popup__layout {
-    max-height: 550px;
-    display: flex;
-    width: 100%;
- 
-
-    .meal__video {
-        width: 50%;
-        height: auto;
-        position: sticky;
-
-        @media (max-width: 1000px) {
-            display: none;
-        }
-    }
-
-    .meal__details {
-        padding: 30px;
-        flex-grow: 1;
-        overflow-y: auto;
-        max-height: 550px;
-
-        .meal__ingredient {
-            list-style: square;
-            line-height: 30px;
-
-            .meal__measure {
-                font-style: italic;
-                font-weight: bold;
-            }
-        }
-
-        .meal__instructions {
-            line-height: 25px;
-            font-size: 1rem;
-        }
-    }
 }

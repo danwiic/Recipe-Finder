@@ -1,17 +1,39 @@
+.popup__button{
+    all: unset;
+    padding: 16px 30px;
+    background-color: rgb(209, 33, 33);
+    border-radius: 8px;
+    color: white;
+    font-weight: 700;
+    box-shadow: rgba(0, 0, 0, 0.24) 0px 3px 8px;
+}
+
+.popup__button:hover{
+    background-color: rgb(143, 36, 36);
+}
+
 .protected__popup{
-    padding: 40px;
+    padding: 20px;
     display: flex;
     flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    min-height: 250px;
+
+    .content{
+        margin-bottom: 20px;
+        font-size: 1.2rem;
+    }
 
     .message{
         display: flex;
-        align-items: center;
-        justify-content: center;
-        text-align: center;
-
+        
+        h3{
+            font-size: 2.2rem;
+            margin-bottom: 50px;
+        }
         svg{
-            font-size: 2rem;
-            text-align: center;
+            font-size: 3rem;
         }
     }
 }

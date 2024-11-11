@@ -7,20 +7,67 @@
     align-items: center;
     z-index: 99;
 
+    .confirmation__container{
+        text-align: center;
+        padding: 20px;
+
+        h3{
+            display: flex;
+            font-size: 1.5rem;
+            justify-content: center;
+            align-items: center;
+
+            svg{
+                font-size: 2rem;
+                margin-right: 10px;
+            }
+        }
+
+        p{
+            margin-top: 30px;
+            margin-bottom: 20px;
+            font-size: 1rem;
+        }
+
+        .confirmation{
+            display: flex;
+            justify-content: space-around;
+
+            button{
+                all: unset;
+                padding: 10px 20px;
+                font-weight: bold;
+                border-radius: 8px;
+                cursor: pointer;
+            }
+
+            .btn__confirm{
+                background: #493628;
+                color: white;
+            }
+            .btn__cancel{
+                background: white;
+                color: #493628;
+                outline: 2px solid #493628;
+            }
+        }
+    }
+
     .btn__goToLogin{
         all: unset;
         border: none;
         padding: 10px 28px;
         border-radius: 12px;
         box-shadow: rgba(0, 0, 0, 0.24) 0px 3px 8px;
-        background-color: #FFDBB5;
+        background-color: #493628;
         text-decoration: none;
         font-weight: 700;
-        color: #493628;
+        color: rgb(210, 210, 210);
+        cursor: pointer;
     }
 
     .btn__goToLogin:hover{
-        background-color: #e1b98f;
+        background-color: #32251c;
     }
 
     .nav__links{
@@ -62,10 +109,19 @@
     }
 
     .logo{
-        display: flex;
-        font-size: 2.3rem;
-        align-items: center;
         cursor: pointer;
+        font-size: 2.3rem;
+        a{
+            color:#493628;
+            align-items: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+           
+            svg{
+                margin-right: 5px;
+            }
+        }
 
         @media (width <= 1000px){
             font-size: 2rem;

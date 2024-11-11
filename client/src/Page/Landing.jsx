@@ -1,58 +1,99 @@
-import { useState } from "react"
-import Layout from "../Components/Layout"
-import { FaSearch } from "react-icons/fa"
-import Loader from '../Components/Loader'
-import './Style/Landing.css'
-import axios from "axios"
-import Popup from "../Components/Popup"
-import ReactPlayer from 'react-player/youtube'
-import searchIcon from '../../public/search.png'
-
+import React, { useState, useEffect } from 'react';
+import Layout from "../Components/Layout";
+import Loader from '../Components/Loader';
+import './Style/Landing.css';
+import axios from "axios";
+import Popup from "../Components/Popup";
+import ReactPlayer from 'react-player/youtube';
+import searchIcon from '/search.png';
+import { useNavigate } from 'react-router-dom';
 
 export default function Landing() {
-    const [search, setSearch] = useState({ search: "" })
-    const [results, setResults] = useState([])
-    const [loading, setLoading] = useState(false) 
-    const [error, setError] = useState(null)
-    const [open, setOpen] = useState(false)
-    const [selectedMeal, setSelectedMeal] = useState(null)
+    const [search, setSearch] = useState({ search: "" });
+    const [results, setResults] = useState([]);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState(null);
+    const [open, setOpen] = useState(false);
+    const navigate = useNavigate();
+    console.log("modified: ",results);
+    
+    useEffect(() => {
+        const storedSearch = localStorage.getItem('search');
+        const storedResults = localStorage.getItem('results');
+        
+        if (storedSearch) setSearch({ search: storedSearch });
+        if (storedResults) setResults(JSON.parse(storedResults));
+    }, []);
+
+    const formatMealData = (meal) => {
+        const ingredients = meal.ingredients || {};
+        const measurements = meal.measurements || {};
+    
+        // Create arrays to hold the formatted data
+        const formattedIngredients = [];
+        const formattedMeasurements = [];
+    
+        for (let i = 1; i <= 20; i++) {
+            const ingredient = ingredients[`ingredient${i}`];
+            const measurement = measurements[`measurement${i}`];
+    
+            if (ingredient) {
+                formattedIngredients.push(ingredient.trim());
+                formattedMeasurements.push(measurement ? measurement.trim() : '');
+            }
+        }
+    
+        return {
+            ingredients: formattedIngredients,
+            measurements: formattedMeasurements,
+        };
+    };
+    
 
     const handleChange = (e) => {
-        const { name, value } = e.target
+        const { name, value } = e.target;
         setSearch(prevState => ({
             ...prevState,
             [name]: value
-        }))
-    }
+        }));
+    };
 
     const handleSubmit = async (e) => {
-        e.preventDefault()
+        e.preventDefault();
         
-        if (!search.search.trim()) return
-        setLoading(true)
-        setError(null)
-        setResults([])
+        if (!search.search.trim()) return;
+        setLoading(true);
+        setError(null);
+        setResults([]);
 
         try {
             const { data } = await axios.get(`https://www.themealdb.com/api/json/v1/1/search.php?s=${search.search}`);
             
             if (data.meals) {
-                setResults(data.meals)
+                const formattedMeals = data.meals.map(meal => {
+                    return {
+                        ...meal,
+                        ...formatMealData(meal), 
+                    };
+                });
+                
+                setResults(formattedMeals)
+                localStorage.setItem('search', search.search);
+                localStorage.setItem('results', JSON.stringify(formattedMeals));
             } else {
-                setError("No meals found for your search.")
+                setError("No meals found for your search.");
             }
         } catch (e) {
-            setError("An error occurred while fetching the data.")
-            console.error(e)
+            setError("An error occurred while fetching the data.");
+            console.error(e);
         } finally {
-            setLoading(false)
+            setLoading(false);
         }
-    }
+    };
 
-    const handleViewRecipe = (meal) => {
-        setSelectedMeal(meal)
-        setOpen(true)
-    }
+    const handleViewRecipe = (recipe) => {
+        navigate(`/recipe/${recipe.idMeal}`);
+    };
 
     return (
         <div className="recipe__container">
@@ -113,54 +154,6 @@ export default function Landing() {
                     </div>
                 </div> 
             </Layout>
-
-            {open && 
-                <Popup 
-                    trigger={open} 
-                    setTrigger={setOpen} 
-                >
-                   
-                    <h2>{selectedMeal.strMeal}</h2>
-                    <div className="popup__layout">
-
-                            <div className="meal__video">
-                                <ReactPlayer  url={selectedMeal.strYoutube} />
-                            </div>
-                    
-                        <div className="meal__details">
-                            <div className="popup__description">
-                                <h3>Instructions</h3>
-                                <ol className="meal__instructions">
-                                {selectedMeal.strInstructions
-                                    .split('. ') 
-                                    .map((step, index) => {
-                                    if (step.trim()) {
-                                        return <li key={index}>{step.trim()}.</li>;
-                                    }
-                                    return null;
-                                    })}
-                                </ol>
-
-                                <h3>Ingredients:</h3>
-                                <ul>
-                                {[...Array(20)].map((_, index) => {
-                                    const ingredient = selectedMeal[`strIngredient${index + 1}`];
-                                    const measure = selectedMeal[`strMeasure${index + 1}`];
-                                    if (ingredient) {
-                                    return (
-                                        <li key={index} className="meal__ingredient">
-                                       <span className="meal__measure">{measure}</span> - {ingredient}  
-                                        </li>
-                                    );
-                                    }
-                                    return null;
-                                })}
-                                </ul>
-                            </div>
-                            </div>
-                    </div>
-                </Popup>
-            }
         </div>
     );
 }
