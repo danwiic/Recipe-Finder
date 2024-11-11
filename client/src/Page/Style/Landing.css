@@ -17,7 +17,6 @@
     .tag{
         text-align: center;
         margin-bottom: 20px;
-        text-shadow: 2px 2px #95c57f;
         font-style: italic;
 
         @media(width <= 1000px){
