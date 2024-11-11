@@ -4,19 +4,30 @@ import Planner from "./Page/Planner"
 import Favorites from "./Page/Favorites.jsx"
 import Login from "./Page/Login.jsx"
 import Signup from "./Page/Signup.jsx"
+import { UserProvider } from "./Context/UserContext.jsx"
+import ProtectedRoute from "./Components/ProtectedRoute.jsx"
+ProtectedRoute
 
 export default function App() {
   return(
     <>
+    <UserProvider>
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Landing/>} />
-          <Route path="/favorites" element={<Favorites/>} />
-          <Route path="/planner" element={<Planner/>} />
+          <Route path="/favorites" element={ 
+            <ProtectedRoute>
+            <Favorites />
+          </ProtectedRoute>} />
+
+          <Route path="/planner" element={ <ProtectedRoute>
+            <Planner />
+          </ProtectedRoute>} />
           <Route path='/login' element={<Login/>}/> 
           <Route path='/signup' element={<Signup/>}/> 
         </Routes>
       </BrowserRouter>
+    </UserProvider>
     </>
   )
 };
