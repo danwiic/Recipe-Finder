@@ -3,8 +3,6 @@ import Layout from "../Components/Layout";
 import Loader from '../Components/Loader';
 import './Style/Landing.css';
 import axios from "axios";
-import Popup from "../Components/Popup";
-import ReactPlayer from 'react-player/youtube';
 import searchIcon from '/search.png';
 import { useNavigate } from 'react-router-dom';
 
@@ -13,9 +11,7 @@ export default function Landing() {
     const [results, setResults] = useState([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
-    const [open, setOpen] = useState(false);
     const navigate = useNavigate();
-    console.log("modified: ", results);
 
     useEffect(() => {
         const storedSearch = localStorage.getItem('search');
@@ -25,53 +21,35 @@ export default function Landing() {
         if (storedResults) setResults(JSON.parse(storedResults));
     }, []);
 
-    const formatMealData = (meal) => {
-        // Check if the meal data has ingredients and measurements fields
-        const ingredients = meal.ingredients || {};
-        const measurements = meal.measurements || {};
-        const formattedIngredients = [];
-        const formattedMeasurements = [];
-    
-        // Loop through properties in the `meal` object that may contain ingredient and measure keys
-        for (let i = 1; i <= 20; i++) {
-            const ingredientKey = `strIngredient${i}`;
-            const measureKey = `strMeasure${i}`;
-            
-            const ingredient = meal[ingredientKey];
-            const measurement = meal[measureKey];
-            
-            // Only add non-empty ingredients and measurements
-            if (ingredient && ingredient.trim()) {
-                formattedIngredients.push(ingredient.trim());
-                formattedMeasurements.push(measurement ? measurement.trim() : '');
-            }
-        }
-
-        // If the meal data contains ingredients or measurements in JSON format (e.g., LONGTEXT), try parsing them
-        try {
-            if (meal.ingredients && typeof meal.ingredients === 'string') {
-                meal.ingredients = JSON.parse(meal.ingredients);
-            }
-            if (meal.measurements && typeof meal.measurements === 'string') {
-                meal.measurements = JSON.parse(meal.measurements);
-            }
-        } catch (error) {
-            console.error("Error parsing ingredients/measurements JSON:", error);
-        }
-
-        return {
-            ...meal, // include other meal details
-            ingredients: formattedIngredients.length ? formattedIngredients : meal.ingredients || [],
-            measurements: formattedMeasurements.length ? formattedMeasurements : meal.measurements || [],
-        };
-    };
-
     const handleChange = (e) => {
         const { name, value } = e.target;
         setSearch(prevState => ({
             ...prevState,
             [name]: value
         }));
+    };
+
+    const formatMealData = (meal) => {
+        const ingredients = meal.ingredients || {};
+        const measurements = meal.measurements || {};
+        const formattedIngredients = [];
+        const formattedMeasurements = [];
+    
+        for (let i = 1; i <= 20; i++) {
+            const ingredient = meal[`strIngredient${i}`];
+            const measure = meal[`strMeasure${i}`];
+            
+            if (ingredient && ingredient.trim()) {
+                formattedIngredients.push(ingredient.trim());
+                formattedMeasurements.push(measure ? measure.trim() : '');
+            }
+        }
+
+        return {
+            ...meal,
+            ingredients: formattedIngredients,
+            measurements: formattedMeasurements,
+        };
     };
 
     const handleSubmit = async (e) => {
@@ -83,15 +61,12 @@ export default function Landing() {
         setResults([]);
     
         try {
-            // Call TheMealDB API
             const mealDbResponse = await axios.get(`https://www.themealdb.com/api/json/v1/1/search.php?s=${search.search}`);
             const mealDbResults = mealDbResponse.data.meals ? mealDbResponse.data.meals.map(formatMealData) : [];
     
-            // Call custom API
             const customApiResponse = await axios.get(`http://192.168.1.185:8800/meal?search=${search.search}`);
             const customApiResults = customApiResponse.data.meals ? customApiResponse.data.meals.map(formatMealData) : [];
     
-            // Combine results from both APIs
             const combinedResults = [...mealDbResults, ...customApiResults];
             
             if (combinedResults.length > 0) {

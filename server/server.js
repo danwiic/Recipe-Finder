@@ -66,8 +66,14 @@ app.post("/logout", (req, res) => {
   });
 });
 
+// Add meal
 app.post('/meals', (req, res) => {
   const { strMeal, strCategory, strArea, strInstructions, strMealThumb, strTags, strYoutube, ingredients, measurements, user_id } = req.body;
+
+  console.log("Received data:", req.body);
+  // Convert ingredients and measurements arrays to JSON strings
+  const ingredientsJSON = JSON.stringify(ingredients);
+  const measurementsJSON = JSON.stringify(measurements);
 
   const query = `INSERT INTO meals (strMeal, strCategory, strArea, strInstructions, strMealThumb, strTags, strYoutube, ingredients, measurements, user_id)
                  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
@@ -80,8 +86,8 @@ app.post('/meals', (req, res) => {
       strMealThumb,
       strTags,
       strYoutube,
-      JSON.stringify(ingredients),
-      JSON.stringify(measurements),
+      ingredientsJSON,
+      measurementsJSON,
       user_id,
   ], (err, result) => {
       if (err) {
@@ -92,6 +98,7 @@ app.post('/meals', (req, res) => {
   });
 });
 
+// Search meals
 app.get('/meal', (req, res) => {
   const search = req.query.search;
 
@@ -186,29 +193,105 @@ app.get('/meal/:id', (req, res) => {
 });
 
 // Add meal to favorites
-app.post('/favorites', (req, res) => {
+app.post('/favorites', async (req, res) => {
   const { idMeal, user_id } = req.body;
 
-  // Check if the meal is already in favorites
-  db.query('SELECT * FROM favorites WHERE user_id = ? AND idMeal = ?', [user_id, idMeal], (err, results) => {
+  // Check if the meal already exists in the meals table
+  db.query('SELECT * FROM meals WHERE idMeal = ?', [idMeal], async (err, results) => {
     if (err) {
       return res.status(500).json({ message: "Database error", error: err });
     }
 
-    if (results.length > 0) {
-      return res.status(400).json({ message: "Meal already added to favorites" });
-    }
+    if (results.length === 0) {
+      // Meal does not exist, fetch meal details from TheMealDB API
+      try {
+        const response = await axios.get(`https://www.themealdb.com/api/json/v1/1/lookup.php?i=${idMeal}`);
+        const mealDetails = response.data.meals[0];
 
-    // If not added, insert the new favorite
-    db.query('INSERT INTO favorites (user_id, idMeal) VALUES (?, ?)', [user_id, idMeal], (err, result) => {
-      if (err) {
-        return res.status(500).json({ message: 'Error adding to favorites', error: err });
+        // Log the meal details from the API for debugging
+        console.log("Meal details from API:", mealDetails);
+
+        // Extract ingredients and measurements
+        const ingredients = [];
+        const measurements = [];
+        for (let i = 1; i <= 20; i++) {
+          const ingredientKey = `strIngredient${i}`;
+          const measureKey = `strMeasure${i}`;
+
+          const ingredient = mealDetails[ingredientKey];
+          const measurement = mealDetails[measureKey];
+
+          // Check if ingredient and measurement are valid and non-empty
+          if (ingredient && ingredient.trim()) {
+            ingredients.push(ingredient.trim());
+          }
+          if (measurement && measurement.trim()) {
+            measurements.push(measurement.trim());
+          }
+        }
+
+        // Log the ingredients and measurements to check
+        console.log("Extracted Ingredients:", ingredients);
+        console.log("Extracted Measurements:", measurements);
+
+        // Check if ingredients and measurements are populated
+        const ingredientsJson = ingredients.length > 0 ? JSON.stringify(ingredients) : null;
+        const measurementsJson = measurements.length > 0 ? JSON.stringify(measurements) : null;
+
+        // Log the formatted data before insertion
+        console.log("Formatted Ingredients JSON:", ingredientsJson);
+        console.log("Formatted Measurements JSON:", measurementsJson);
+
+        // Insert meal into the meals table
+        const query = `INSERT INTO meals (idMeal, strMeal, strCategory, strArea, strInstructions, strMealThumb, strTags, strYoutube, ingredients, measurements)
+                       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+
+        db.query(query, [
+          mealDetails.idMeal,
+          mealDetails.strMeal,
+          mealDetails.strCategory,
+          mealDetails.strArea,
+          mealDetails.strInstructions,
+          mealDetails.strMealThumb,
+          mealDetails.strTags,
+          mealDetails.strYoutube,
+          ingredientsJson,
+          measurementsJson
+        ], (err, result) => {
+          if (err) {
+            console.error("Error inserting meal data:", err);
+            return res.status(500).json({ message: 'Error inserting meal data', error: err });
+          }
+
+          // After the meal is added to the meals table, now add it to favorites
+          db.query('INSERT INTO favorites (user_id, idMeal) VALUES (?, ?)', [user_id, idMeal], (err, result) => {
+            if (err) {
+              console.error("Error adding to favorites:", err);
+              return res.status(500).json({ message: 'Error adding to favorites', error: err });
+            }
+
+            res.status(201).json({ message: 'Meal added to favorites' });
+          });
+        });
+      } catch (error) {
+        console.error("Error fetching meal details from TheMealDB:", error);
+        return res.status(500).json({ message: "Error fetching meal details from TheMealDB", error: error });
       }
+    } else {
+      // If the meal already exists in the meals table, just add to favorites
+      db.query('INSERT INTO favorites (user_id, idMeal) VALUES (?, ?)', [user_id, idMeal], (err, result) => {
+        if (err) {
+          console.error("Error adding to favorites:", err);
+          return res.status(500).json({ message: 'Error adding to favorites', error: err });
+        }
 
-      res.status(201).json({ message: 'Meal added to favorites' });
-    });
+        res.status(201).json({ message: 'Meal added to favorites' });
+      });
+    }
   });
 });
+
+
 
 // Fetch the meals that are added to favorites by the user
 app.get('/favorites/:user_id', async (req, res) => {
@@ -224,14 +307,22 @@ app.get('/favorites/:user_id', async (req, res) => {
       return res.status(404).json({ message: "No favorite meals found" });
     }
 
-    // Fetch meal details from TheMealDB API for each idMeal
     try {
       const mealPromises = results.map(async (fav) => {
-        const response = await axios.get(`https://www.themealdb.com/api/json/v1/1/lookup.php?i=${fav.idMeal}`);
-        return response.data.meals[0]; // Return the first meal
+        // Attempt to get meal details from TheMealDB API first
+        let response = await axios.get(`https://www.themealdb.com/api/json/v1/1/lookup.php?i=${fav.idMeal}`);
+        let meal = response.data.meals ? response.data.meals[0] : null;
+
+        // If not found in TheMealDB API, fall back to custom API
+        if (!meal) {
+          response = await axios.get(`http://192.168.1.185:8800/meal?id=${fav.idMeal}`);
+          meal = response.data.meals ? response.data.meals[0] : null;
+        }
+
+        return meal;
       });
 
-      const meals = await Promise.all(mealPromises);
+      const meals = (await Promise.all(mealPromises)).filter(Boolean); // Filter out null values
 
       res.status(200).json({ meals });
     } catch (error) {
@@ -239,7 +330,6 @@ app.get('/favorites/:user_id', async (req, res) => {
     }
   });
 });
-
 
 
 
@@ -268,8 +358,6 @@ app.post('/favorites/remove', (req, res) => {
     });
   });
 });
-
-
 
 
 

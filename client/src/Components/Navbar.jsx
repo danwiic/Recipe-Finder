@@ -8,7 +8,7 @@ import Popup from "../Components/PopupS";
 import { FaRegQuestionCircle } from "react-icons/fa";
 
 
-export default function Navbar({ children }) {
+export default function Navbar({}) {
   const [isActive, setActive] = useState(false);
   const { user, setUser } = useUser(); // Use user context to check if user is logged in
   const [open, setOpen] = useState(false);
@@ -49,7 +49,7 @@ export default function Navbar({ children }) {
   }
 
   return (
-    <>
+    <div className='navbar__container__parent'>
       <div className="navbar__container" style={isLoginPage ? myStyle : {}}>
         <div className="logo">
           <Link to='/'><
@@ -101,7 +101,7 @@ export default function Navbar({ children }) {
         )}
         
       </div>
-      {children}
-    </>
+      
+    </div>
   );
 }

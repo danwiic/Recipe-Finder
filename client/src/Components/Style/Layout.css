@@ -1,0 +1,9 @@
+.layout__container{
+    position: relative;
+
+    .layout__nav{
+        position: sticky;
+        top: 0;
+        z-index: 99;
+    }
+}
