@@ -15,8 +15,8 @@ export default function Landing() {
     const [error, setError] = useState(null);
     const [open, setOpen] = useState(false);
     const navigate = useNavigate();
-    console.log("modified: ",results);
-    
+    console.log("modified: ", results);
+
     useEffect(() => {
         const storedSearch = localStorage.getItem('search');
         const storedResults = localStorage.getItem('results');
@@ -26,29 +26,45 @@ export default function Landing() {
     }, []);
 
     const formatMealData = (meal) => {
+        // Check if the meal data has ingredients and measurements fields
         const ingredients = meal.ingredients || {};
         const measurements = meal.measurements || {};
-    
-        // Create arrays to hold the formatted data
         const formattedIngredients = [];
         const formattedMeasurements = [];
     
+        // Loop through properties in the `meal` object that may contain ingredient and measure keys
         for (let i = 1; i <= 20; i++) {
-            const ingredient = ingredients[`ingredient${i}`];
-            const measurement = measurements[`measurement${i}`];
-    
-            if (ingredient) {
+            const ingredientKey = `strIngredient${i}`;
+            const measureKey = `strMeasure${i}`;
+            
+            const ingredient = meal[ingredientKey];
+            const measurement = meal[measureKey];
+            
+            // Only add non-empty ingredients and measurements
+            if (ingredient && ingredient.trim()) {
                 formattedIngredients.push(ingredient.trim());
                 formattedMeasurements.push(measurement ? measurement.trim() : '');
             }
         }
-    
+
+        // If the meal data contains ingredients or measurements in JSON format (e.g., LONGTEXT), try parsing them
+        try {
+            if (meal.ingredients && typeof meal.ingredients === 'string') {
+                meal.ingredients = JSON.parse(meal.ingredients);
+            }
+            if (meal.measurements && typeof meal.measurements === 'string') {
+                meal.measurements = JSON.parse(meal.measurements);
+            }
+        } catch (error) {
+            console.error("Error parsing ingredients/measurements JSON:", error);
+        }
+
         return {
-            ingredients: formattedIngredients,
-            measurements: formattedMeasurements,
+            ...meal, // include other meal details
+            ingredients: formattedIngredients.length ? formattedIngredients : meal.ingredients || [],
+            measurements: formattedMeasurements.length ? formattedMeasurements : meal.measurements || [],
         };
     };
-    
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -65,21 +81,23 @@ export default function Landing() {
         setLoading(true);
         setError(null);
         setResults([]);
-
+    
         try {
-            const { data } = await axios.get(`https://www.themealdb.com/api/json/v1/1/search.php?s=${search.search}`);
+            // Call TheMealDB API
+            const mealDbResponse = await axios.get(`https://www.themealdb.com/api/json/v1/1/search.php?s=${search.search}`);
+            const mealDbResults = mealDbResponse.data.meals ? mealDbResponse.data.meals.map(formatMealData) : [];
+    
+            // Call custom API
+            const customApiResponse = await axios.get(`http://192.168.1.185:8800/meal?search=${search.search}`);
+            const customApiResults = customApiResponse.data.meals ? customApiResponse.data.meals.map(formatMealData) : [];
+    
+            // Combine results from both APIs
+            const combinedResults = [...mealDbResults, ...customApiResults];
             
-            if (data.meals) {
-                const formattedMeals = data.meals.map(meal => {
-                    return {
-                        ...meal,
-                        ...formatMealData(meal), 
-                    };
-                });
-                
-                setResults(formattedMeals)
+            if (combinedResults.length > 0) {
+                setResults(combinedResults);
                 localStorage.setItem('search', search.search);
-                localStorage.setItem('results', JSON.stringify(formattedMeals));
+                localStorage.setItem('results', JSON.stringify(combinedResults));
             } else {
                 setError("No meals found for your search.");
             }

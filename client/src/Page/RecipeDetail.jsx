@@ -1,89 +1,128 @@
-import React, { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import ReactPlayer from 'react-player/youtube';
-import './Style/RecipeDetail.css';
-import axios from 'axios';
-import Loader from '../Components/Loader';
-import { MdArrowBack } from "react-icons/md";
-import { IoStar } from "react-icons/io5";
+import React, { useEffect, useState } from 'react'
+import { useParams, useNavigate } from 'react-router-dom'
+import ReactPlayer from 'react-player/youtube'
+import './Style/RecipeDetail.css'
+import axios from 'axios'
+import Loader from '../Components/Loader'
+import { MdArrowBack } from "react-icons/md"
+import { IoStar } from "react-icons/io5"
 
 export default function MealDetail() {
-  const { id } = useParams();
-  const [meal, setMeal] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [nutrition, setNutrition] = useState(null);
-  const navigate = useNavigate();
+  const { id } = useParams()
+  const [meal, setMeal] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
+  const [nutrition, setNutrition] = useState(null)
+  const navigate = useNavigate()
 
   useEffect(() => {
     const fetchMealDetails = async () => {
       try {
-        const { data } = await axios.get(`https://www.themealdb.com/api/json/v1/1/lookup.php?i=${id}`);
+        const { data } = await axios.get(`https://www.themealdb.com/api/json/v1/1/lookup.php?i=${id}`)
         
         if (data.meals && data.meals.length > 0) {
-          const mealData = data.meals[0];
-          setMeal(mealData);
-          fetchNutrition(mealData);
+          const mealData = data.meals[0]
+          setMeal(mealData)
+          fetchNutrition(mealData)
         } else {
-          setError('Meal not found!');
+          const customApiResponse = await axios.get(`http://192.168.1.185:8800/meal/${id}`)
+          if (customApiResponse.data && customApiResponse.data.meal) {
+            const customMealData = customApiResponse.data.meal
+            setMeal(customMealData)
+
+            if (customMealData.nutrition) {
+              setNutrition(customMealData.nutrition)
+            } else {
+              fetchNutrition(customMealData)
+            }
+          } else {
+            setError('Meal not found!')
+          }
         }
       } catch (error) {
-        setError('An error occurred while fetching the meal details.');
-        console.error(error);
+        setError('An error occurred while fetching the meal details.')
+        console.error(error)
       } finally {
-        setLoading(false);
+        setLoading(false)
       }
-    };
+    }
 
-    fetchMealDetails();
-  }, [id]);
+    fetchMealDetails()
+  }, [id])
 
   const fetchNutrition = async (meal) => {
-    const ingredients = [];
-    const ingredientRegex = /^[\d\.\,\/\*\+\-]*\s*(.*)$/;
-  
-    for (let i = 1; i <= 20; i++) {
-      const ingredient = meal[`strIngredient${i}`];
-      let measure = meal[`strMeasure${i}`];
-  
-      if (ingredient && ingredient.trim()) {
-        let cleanedIngredient = ingredient.trim().replace(ingredientRegex, '$1').trim();
-  
-        if (!measure || measure.trim().toLowerCase() === 'to serve') {
-          measure = '1 unit';
+    let ingredients = []
+    let measurements = []
+
+    if (meal.strIngredient1) {
+      for (let i = 1; i <= 20; i++) {
+        const ingredient = meal[`strIngredient${i}`]
+        const measurement = meal[`strMeasure${i}`]
+
+        if (ingredient && ingredient.trim()) {
+          ingredients.push(ingredient.trim())
+          measurements.push(measurement || '1 unit')
         }
-        cleanedIngredient = `${measure.trim()} ${cleanedIngredient}`;
-        ingredients.push(cleanedIngredient);
       }
     }
-  
-    if (ingredients.length > 0) {
+
+    if (ingredients.length === 0 || measurements.length === 0) {
+      if (meal.ingredients && meal.measurements) {
+        try {
+          ingredients = JSON.parse(meal.ingredients)
+          measurements = JSON.parse(meal.measurements)
+        } catch (error) {
+          console.error("Error parsing custom API data:", error)
+        }
+      }
+    }
+
+    if (ingredients.length === 0 || measurements.length === 0) {
+      console.error("Ingredients or measurements are missing.")
+      setError("Ingredients or measurements are missing.")
+      return
+    }
+
+    const ingredientList = []
+    const ingredientRegex = /^[\d\.\,\/\*\+\-]*\s*(.*)$/
+
+    for (let i = 0; i < ingredients.length; i++) {
+      const ingredient = ingredients[i]
+      let measure = measurements[i] || '1 unit'
+
+      if (ingredient && ingredient.trim()) {
+        let cleanedIngredient = ingredient.trim().replace(ingredientRegex, '$1').trim()
+        cleanedIngredient = `${measure.trim()} ${cleanedIngredient}`
+        ingredientList.push(cleanedIngredient)
+      }
+    }
+
+    console.log("Final ingredient list:", ingredientList)
+
+    if (ingredientList.length > 0) {
       try {
-        const appId = 'fcea78c3';
-        const appKey = 'd4ac7d59db1dff270f38a92f6a4cc461';
-  
+        const appId = 'fcea78c3'
+        const appKey = 'd4ac7d59db1dff270f38a92f6a4cc461'
+
         const response = await axios.post(
           `https://api.edamam.com/api/nutrition-details?app_id=${appId}&app_key=${appKey}`,
-          {
-            ingr: ingredients,
-          },
-          {
-            headers: {
-              'Content-Type': 'application/json',
-            },
-          }
-        );
-        setNutrition(response.data);
+          { ingr: ingredientList },
+          { headers: { 'Content-Type': 'application/json' } }
+        )
+        setNutrition(response.data)
       } catch (error) {
-        console.error('Error fetching nutrition data:', error);
-        setError('Could not fetch nutrition information.');
+        console.error("Error fetching nutrition data:", error)
+        setError('Could not fetch nutrition information.')
       }
+    } else {
+      console.error("No valid ingredients to send to Edamam.")
+      setError("No valid ingredients to fetch nutrition.")
     }
-  };
+  }
 
-  if (loading) return <div className="loading"><Loader /></div>;
-  if (error) return <div>{error}</div>;
-  if (!meal) return <div>Meal not found!</div>;
+  if (loading) return <div className="loading"><Loader /></div>
+  if (error) return <div>{error}</div>
+  if (!meal) return <div>Meal not found!</div>
 
   return (
     <>
@@ -124,23 +163,22 @@ export default function MealDetail() {
             <h3>Ingredients:</h3>
             <ul>
               {[...Array(20)].map((_, index) => {
-                const ingredient = meal[`strIngredient${index + 1}`];
-                const measure = meal[`strMeasure${index + 1}`];
+                const ingredient = meal[`strIngredient${index + 1}`]
+                const measure = meal[`strMeasure${index + 1}`] || '1 unit'
                 if (ingredient) {
                   return (
                     <li key={index}>
                       <span className='recipe__measurement'>
-                        {measure ? `${measure.trim()}` : '1 unit'}
-                      </span> 
-                      - {ingredient}
+                        {measure.trim()}
+                      </span> - {ingredient}
                     </li>
-                  );
-                } else return null;
+                  )
+                } else return null
               })}
             </ul>
           </div>
         </div>
       </div>
     </>
-  );
+  )
 }
