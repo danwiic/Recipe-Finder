@@ -6,49 +6,87 @@ import axios from 'axios'
 import Loader from '../Components/Loader'
 import { MdArrowBack } from "react-icons/md"
 import { IoStar } from "react-icons/io5"
+import { useUser } from "../Context/UserContext" 
+import Layout from '../Components/Layout.jsx'
+import Popup from '../Components/Popup.jsx'
+import { Rating } from 'react-simple-star-rating';
+Popup
 
 export default function MealDetail() {
   const { id } = useParams()
+  const { user } = useUser() // To get user data, such as ID
   const [meal, setMeal] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [nutrition, setNutrition] = useState(null)
+  const [isFavorite, setIsFavorite] = useState(false) // To track if the meal is in favorites
+  const [ratingData, setRatingData] = useState({ 
+    averageRating: 0, 
+    ratingCount: 0
+  })
+  const [rating, setRating] = useState(0);  // Initialize rating with 0
+  const [isOpen, setOpen] = useState(false); 
   const navigate = useNavigate()
+  
+  console.log(ratingData);
+  console.log("meal: ", meal);
+  
+  
+  
+useEffect(() => {
+  const fetchMealDetails = async () => {
+    try {
+      const { data } = await axios.get(`https://www.themealdb.com/api/json/v1/1/lookup.php?i=${id}`);
+      
+      if (data.meals && data.meals.length > 0) {
+        const mealData = data.meals[0];
+        setMeal(mealData);
+        fetchNutrition(mealData);
+      } else {
+        const customApiResponse = await axios.get(`http://192.168.1.185:8800/meal/${id}`);
+        if (customApiResponse.data && customApiResponse.data.meal) {
+          const customMealData = customApiResponse.data.meal;
+          setMeal(customMealData);
+
+          if (customMealData.nutrition) {
+            setNutrition(customMealData.nutrition);
+          } else {
+            fetchNutrition(customMealData);
+          }
+        } else {
+          setError('Meal not found!');
+        }
+      }
+    } catch (error) {
+      setError('An error occurred while fetching the meal details.');
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  fetchMealDetails();
+  fetchRatingData();  // Call fetchRatingData to load ratings data
+
+}, [id]);
+
+
 
   useEffect(() => {
-    const fetchMealDetails = async () => {
+    const checkFavoriteStatus = async () => {
       try {
-        const { data } = await axios.get(`https://www.themealdb.com/api/json/v1/1/lookup.php?i=${id}`)
-        
-        if (data.meals && data.meals.length > 0) {
-          const mealData = data.meals[0]
-          setMeal(mealData)
-          fetchNutrition(mealData)
-        } else {
-          const customApiResponse = await axios.get(`http://192.168.1.185:8800/meal/${id}`)
-          if (customApiResponse.data && customApiResponse.data.meal) {
-            const customMealData = customApiResponse.data.meal
-            setMeal(customMealData)
-
-            if (customMealData.nutrition) {
-              setNutrition(customMealData.nutrition)
-            } else {
-              fetchNutrition(customMealData)
-            }
-          } else {
-            setError('Meal not found!')
-          }
-        }
+        const response = await axios.get(`http://192.168.1.185:8800/favorites/${user.id}`)
+        const mealIds = response.data.meals.map(meal => meal.idMeal)
+        setIsFavorite(mealIds.includes(id))
       } catch (error) {
-        setError('An error occurred while fetching the meal details.')
-        console.error(error)
-      } finally {
-        setLoading(false)
+        console.error("Error checking favorite status:", error)
       }
     }
 
-    fetchMealDetails()
-  }, [id])
+    if (user?.id) {
+      checkFavoriteStatus()
+    }
+  }, [id, user])
 
   const fetchNutrition = async (meal) => {
     let ingredients = []
@@ -101,8 +139,8 @@ export default function MealDetail() {
 
     if (ingredientList.length > 0) {
       try {
-        const appId = 'fcea78c3'
-        const appKey = 'd4ac7d59db1dff270f38a92f6a4cc461'
+        const appId = '3b66e8b7'
+        const appKey = '780bda1b571b2b37b58a54c5e738a464'
 
         const response = await axios.post(
           `https://api.edamam.com/api/nutrition-details?app_id=${appId}&app_key=${appKey}`,
@@ -119,66 +157,199 @@ export default function MealDetail() {
       setError("No valid ingredients to fetch nutrition.")
     }
   }
+  const fetchRatingData = async () => {
+    try {
+      const response = await axios.get(`http://192.168.1.185:8800/ratings/average/${id}`);
+      setRatingData(response.data);
+    } catch (error) {
+      console.error("Error fetching rating data:", error);
+    }
+  }
+  useEffect(() => {
+    fetchRatingData()
+  }, [ratingData])
+
+  const handleAddToFavorites = async () => {
+    try {
+      console.log("Meal ID:", meal.idMeal); // Check if this is set properly
+  
+      const response = await axios.post('http://192.168.1.185:8800/favorites', {
+        user_id: user.id,
+        idMeal: meal.idMeal,  // Meal ID
+      });
+  
+      if (response.data) {
+        setIsFavorite(true); // Mark as favorite
+        console.log("Favorite count updated:", response.data.favoriteCount);
+      }
+    } catch (error) {
+      console.error("Error adding to favorites:", error);
+    }
+  };
+  
+
+  const handleRemoveFromFavorites = async () => {
+    try {
+      const response = await axios.post('http://192.168.1.185:8800/favorites/remove', {
+        user_id: user.id,   // User ID
+        idMeal: meal.idMeal, // Meal ID
+      });
+  
+      if (response.data) {
+        setIsFavorite(false); // Mark the meal as not a favorite
+        // Optionally, update the favorite count in your component if needed
+        console.log("Favorite count updated:", response.data.favoriteCount);
+      }
+    } catch (error) {
+      console.error("Error removing from favorites:", error);
+    }
+  }
+  
 
   if (loading) return <div className="loading"><Loader /></div>
   if (error) return <div>{error}</div>
   if (!meal) return <div>Meal not found!</div>
 
+  const handleSubmitRating = async () => {
+    try {
+        await axios.post('http://192.168.1.185:8800/rate', {
+            user_id: user.id,
+            meal_id: meal.idMeal,
+            rating: rating,
+        });
+        
+        setOpen(false)
+    } catch (error) {
+        console.error(error);
+    }finally{
+      setLoading(false)
+    }
+}
+
+
+
+  const handleRateMeal = async (meal) => {
+    setMeal(meal); // Set the selected meal for rating
+    setOpen(true); // Show the popup
+
+    // Fetch the user's rating if available for this meal
+    const userRating = await fetchUserRating(meal.idMeal);
+    setRating(userRating); // Set the user's rating in the state
+  };
+
+console.log("selected meal: ", meal);
+
+
+const fetchUserRating = async (mealId) => {
+  try {
+    const response = await axios.get(`http://192.168.1.185:8800/ratings/user/${user.id}/meal/${mealId}`);
+    return response.data.rating || 0;  // Default to 0 if no rating
+  } catch (error) {
+    console.error("Error fetching user rating:", error);
+    return 0; // Return 0 if error occurs
+  }
+};
+
+
+
   return (
     <>
+    <Layout>
+
       <div className="meal__detail__container">
         <div className="back__btn">
           <button className='btn__back' onClick={() => navigate(-1)}><MdArrowBack />BACK</button>
         </div>
 
-        <h2 className='meal__name'>{meal.strMeal}</h2>
+        <h2 className='meal__name'>
+          {meal.strMeal}
+        </h2>
+
+        <span className='rating__data'>({ratingData.averageRating.toFixed(1)} <IoStar /> || {ratingData.ratingCount} Reviews)</span>
+        
 
         <div className="meal__detail__layout">
           <div className="meal__video__container">
-            <div className="meal__video">
-              <ReactPlayer url={meal.strYoutube} />
-            </div>
-            {nutrition && (
-              <div className='meal__nutrition'>
-                <h3>Total Calories: {nutrition.calories}cal</h3>
-                <h3>Serving Size: {nutrition.yield} people</h3>
-                <h3>Calories per Serving: {Math.round(nutrition.calories / nutrition.yield)}cal</h3>
-                <h3>Grams per Serving: {Math.round(nutrition.totalWeight / nutrition.yield)}g</h3>
-                <button className='fav__btn'>
-                  <IoStar />
-                  ADD TO FAVORITES
-                </button>
+
+          <div className="vid__con">
+              <div className="fav__action">
+                  {isFavorite ? (
+                      <button className='fav__btn remove' onClick={handleRemoveFromFavorites}>REMOVE FROM FAVORITES</button>
+                    ) : (
+                      <button className='fav__btn' onClick={handleAddToFavorites}>ADD TO FAVORITES</button>
+                  )}
               </div>
+
+            <div className="con meal__video ">
+              <ReactPlayer 
+                url={meal.strYoutube} 
+                width="100%"
+                height="400px"
+              />
+            </div>
+
+            {nutrition && (
+                <div className='meal__nutrition '>
+                  <h3>Nutrition Facts</h3>
+                  <div className="meal__con">
+                    <div>Calories: <span className='nutrition__details'>{nutrition.calories}cal</span></div>
+                    <div>Serving Size: <span className='nutrition__details'>{nutrition.yield} people</span></div>
+                    <div>Calories per Serving: <span className='nutrition__details'>{Math.round(nutrition.calories / nutrition.yield)}cal</span></div>
+                    <div>Grams per Serving: <span className='nutrition__details'>{Math.round(nutrition.totalWeight / nutrition.yield)}g</span></div>
+                  </div>
+                    
+                    <button onClick={() => handleRateMeal(meal)}>RATE THE MEAL</button>
+                </div>
             )}
-          </div>
 
-          <div className="meal__description">
-            <h3>Instructions</h3>
-            <ol>
-              {meal.strInstructions.split('. ').map((step, index) => (
-                <li key={index}>{step.trim()}</li>
-              ))}
-            </ol>
 
-            <h3>Ingredients:</h3>
-            <ul>
-              {[...Array(20)].map((_, index) => {
-                const ingredient = meal[`strIngredient${index + 1}`]
-                const measure = meal[`strMeasure${index + 1}`] || '1 unit'
-                if (ingredient) {
-                  return (
-                    <li key={index}>
-                      <span className='recipe__measurement'>
-                        {measure.trim()}
-                      </span> - {ingredient}
-                    </li>
-                  )
-                } else return null
-              })}
-            </ul>
+
+          <div className='ingredients__container '>
+              <h3>Ingredients</h3>
+              <ul>
+                {[...Array(20)].map((_, index) => {
+                  const ingredient = meal[`strIngredient${index + 1}`]
+                  const measure = meal[`strMeasure${index + 1}`] || '1 unit'
+                  if (ingredient) {
+                    return (
+                      <li key={index}>
+                        <span className='recipe__measurement'>
+                          {measure.trim()}
+                        </span> - {ingredient}
+                      </li>
+                    )
+                  } else return null
+                })}
+              </ul>
+            </div>
+
+           <div className="meal__description ">
+              <h3>Instructions</h3>
+              <ol>
+                {meal.strInstructions.split('. ').map((step, index) => (
+                  <li key={index}>{step.trim()}</li>
+                ))}
+              </ol>
+            </div>
+
+
+            </div>
+            
           </div>
         </div>
       </div>
+        <Popup trigger={isOpen} setTrigger={setOpen}>
+        <h4>Rate this Recipe ( 1 to 5 star )</h4>
+          <div className="rating__popup">
+              <Rating
+                  onClick={(rate) => setRating(rate)}
+                  initialValue={rating}
+                  className="rate"
+              />
+              <button onClick={handleSubmitRating}>Submit Rating</button>
+          </div>
+      </Popup>
+    </Layout>
     </>
   )
 }

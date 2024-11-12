@@ -379,3 +379,88 @@ app.get('/favorites/count/:idMeal', (req, res) => {
   });
 });
 
+// RATING A MEAL
+app.post('/rate', (req, res) => {
+  const { meal_id, user_id, rating } = req.body;
+
+  if (rating < 1 || rating > 5) {
+      return res.status(400).json({ message: 'Rating must be between 1 and 5.' });
+  }
+
+  // Check if the user has already rated this meal
+  const checkQuery = 'SELECT * FROM ratings WHERE meal_id = ? AND user_id = ?';
+  
+  db.query(checkQuery, [meal_id, user_id], (err, results) => {
+      if (err) {
+          return res.status(500).json({ message: 'Error checking existing rating', error: err });
+      }
+
+      if (results.length > 0) {
+          // If a rating exists, update it
+          const updateQuery = 'UPDATE ratings SET rating = ? WHERE meal_id = ? AND user_id = ?';
+          
+          db.query(updateQuery, [rating, meal_id, user_id], (err, result) => {
+              if (err) {
+                  return res.status(500).json({ message: 'Error updating rating', error: err });
+              }
+
+              res.status(200).json({ message: 'Rating updated successfully' });
+          });
+      } else {
+          // If no existing rating, insert a new one
+          const insertQuery = 'INSERT INTO ratings (meal_id, user_id, rating) VALUES (?, ?, ?)';
+          
+          db.query(insertQuery, [meal_id, user_id, rating], (err, result) => {
+              if (err) {
+                  return res.status(500).json({ message: 'Error submitting rating', error: err });
+              }
+
+              res.status(201).json({ message: 'Rating submitted successfully' });
+          });
+      }
+  });
+});
+
+
+// RATING PER MEAL
+app.get('/ratings/average/:meal_id', (req, res) => {
+  const { meal_id } = req.params;
+
+  const query = `
+    SELECT AVG(rating) AS averageRating, COUNT(rating) AS ratingCount
+    FROM ratings
+    WHERE meal_id = ?`;
+
+  db.query(query, [meal_id], (err, results) => {
+    if (err) {
+      return res.status(500).json({ message: 'Error fetching rating info', error: err });
+    }
+
+    const averageRating = results[0].averageRating || 0;
+    const ratingCount = results[0].ratingCount || 0;
+    res.status(200).json({ averageRating, ratingCount });
+  });
+});
+
+
+// COUNT TOTAL REVIEW A MEAL HAS
+app.get('/meal/:idMeal/ratings/count', (req, res) => {
+  const { idMeal } = req.params;
+
+  // SQL query to count ratings for the given meal ID
+  db.query(
+    'SELECT COUNT(*) AS ratingCount FROM ratings WHERE meal_id = ?',
+    [idMeal],
+    (err, result) => {
+      if (err) {
+        return res.status(500).json({ message: "Error fetching rating count", error: err });
+      }
+
+      const ratingCount = result[0].ratingCount;
+      res.status(200).json({
+        message: `Meal has been rated by ${ratingCount} users`,
+        ratingCount: ratingCount
+      });
+    }
+  );
+});
