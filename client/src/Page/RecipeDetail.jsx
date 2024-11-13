@@ -29,47 +29,48 @@ export default function MealDetail() {
   const navigate = useNavigate()
   
   console.log(ratingData);
-  console.log("meal: ", meal);
-  
-  
-  
-useEffect(() => {
-  const fetchMealDetails = async () => {
-    try {
-      const { data } = await axios.get(`https://www.themealdb.com/api/json/v1/1/lookup.php?i=${id}`);
-      
-      if (data.meals && data.meals.length > 0) {
-        const mealData = data.meals[0];
-        setMeal(mealData);
-        fetchNutrition(mealData);
-      } else {
-        const customApiResponse = await axios.get(`http://192.168.1.185:8800/meal/${id}`);
-        if (customApiResponse.data && customApiResponse.data.meal) {
-          const customMealData = customApiResponse.data.meal;
-          setMeal(customMealData);
 
-          if (customMealData.nutrition) {
-            setNutrition(customMealData.nutrition);
-          } else {
-            fetchNutrition(customMealData);
-          }
+  
+  
+  
+  useEffect(() => {
+    const fetchMealDetails = async () => {
+      try {
+        // First, check if the meal exists in TheMealDB API
+        const { data } = await axios.get(`https://www.themealdb.com/api/json/v1/1/lookup.php?i=${id}`);
+        
+        if (data.meals && data.meals.length > 0) {
+          // If found in TheMealDB, use that data
+          const mealData = data.meals[0];
+          setMeal(mealData);
+          fetchNutrition(mealData);
         } else {
-          setError('Meal not found!');
+          // If not found in TheMealDB, check the custom database
+          const customApiResponse = await axios.get(`http://192.168.1.185:8800/meal/${id}`);
+          console.log(customApiResponse);
+          
+          if (customApiResponse.data) {
+            const customMealData = customApiResponse.data;
+            setMeal(customMealData);
+            console.log("meal: ", customMealData);
+            fetchNutrition(customMealData);
+          } else {
+            setError('Meal not found!');
+          }
         }
+      } catch (error) {
+        setError('An error occurred while fetching the meal details.');
+        console.error(error);
+      } finally {
+        setLoading(false);
       }
-    } catch (error) {
-      setError('An error occurred while fetching the meal details.');
-      console.error(error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  fetchMealDetails();
-  fetchRatingData();  // Call fetchRatingData to load ratings data
-
-}, [id]);
-
+    };
+  
+    fetchMealDetails();
+    fetchRatingData();  // Call fetchRatingData to load ratings data
+  
+  }, [id]);
+  
 
 
   useEffect(() => {
@@ -91,30 +92,29 @@ useEffect(() => {
   const fetchNutrition = async (meal) => {
     let ingredients = []
     let measurements = []
-
-    if (meal.strIngredient1) {
-      for (let i = 1; i <= 20; i++) {
-        const ingredient = meal[`strIngredient${i}`]
-        const measurement = meal[`strMeasure${i}`]
-
-        if (ingredient && ingredient.trim()) {
-          ingredients.push(ingredient.trim())
-          measurements.push(measurement || '1 unit')
-        }
+  
+    // Loop through ingredients and measurements
+    for (let i = 1; i <= 20; i++) {
+      const ingredient = meal[`strIngredient${i}`]
+      const measurement = meal[`strMeasure${i}`]
+  
+      if (ingredient && ingredient.trim()) {
+        ingredients.push(ingredient.trim())
+        measurements.push(measurement || '1 unit') // Use a default measurement if null
       }
     }
-
+  
     if (ingredients.length === 0 || measurements.length === 0) {
       if (meal.ingredients && meal.measurements) {
         try {
-          ingredients = JSON.parse(meal.ingredients)
-          measurements = JSON.parse(meal.measurements)
+          ingredients = (meal.ingredients)
+          measurements = (meal.measurements)
         } catch (error) {
           console.error("Error parsing custom API data:", error)
         }
       }
     }
-
+  
     if (ingredients.length === 0 || measurements.length === 0) {
       console.error("Ingredients or measurements are missing.")
       setError("Ingredients or measurements are missing.")
@@ -169,11 +169,13 @@ useEffect(() => {
     fetchRatingData()
   }, [])
 
+  
+
   const handleAddToFavorites = async () => {
     try {
       console.log("Meal ID:", meal.idMeal); // Check if this is set properly
   
-      const response = await axios.post('http://192.168.1.185:8800/favorites', {
+      const response = await axios.post('http://192.168.1.185:8800/favorites/add', {
         user_id: user.id,
         idMeal: meal.idMeal,  // Meal ID
       });
@@ -262,7 +264,7 @@ const fetchUserRating = async (mealId) => {
         </div>
 
         <h2 className='meal__name'>
-          {meal.strMeal}
+          {meal.strMeal.toUpperCase()}
         </h2>
 
      
@@ -298,8 +300,9 @@ const fetchUserRating = async (mealId) => {
                   <div className="meal__con">
                     <div>Calories: <span className='nutrition__details'>{nutrition.calories}cal</span></div>
                     <div>Serving Size: <span className='nutrition__details'>{nutrition.yield} people</span></div>
-                    <div>Calories per Serving: <span className='nutrition__details'>{Math.round(nutrition.calories / nutrition.yield)}cal</span></div>
-                    <div>Grams per Serving: <span className='nutrition__details'>{Math.round(nutrition.totalWeight / nutrition.yield)}g</span></div>
+                    <div>Fat: <span className='nutrition__details'>{Math.round(nutrition.totalNutrients.FAT.quantity)}g</span></div>
+                    <div>Carbs: <span className='nutrition__details'>{Math.round(nutrition.totalNutrients.CHOCDF.quantity)}g</span></div>
+                    <div>Protein: <span className='nutrition__details'>{Math.round(nutrition.totalNutrients.PROCNT.quantity)}g</span></div>
                   </div>
                   
                     

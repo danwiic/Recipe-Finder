@@ -9,7 +9,7 @@ const app = express();
 app.use(express.json())
 
 app.use(cors({
-  origin: ['http://192.168.1.185:5173', 'http://localhost:5173', 'https://find-meal-recipe.netlify.app'],
+  origin: ['http://192.168.1.185:5173', 'http://localhost:5173'],
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   allowedHeaders: ['Content-Type', 'Authorization', 'Access-Control-Allow-Origin'],
   credentials: true,
@@ -140,98 +140,154 @@ app.post('/meals', (req, res) => {
 });
 
 // Search meals
-app.get('/meal', (req, res) => {
+app.get('/meal', async (req, res) => {
   const search = req.query.search;
 
   if (!search) {
-      return res.status(400).json({ message: "Search term is required" });
+    return res.status(400).json({ message: "Search term is required" });
   }
 
-  db.query('SELECT * FROM meals WHERE strMeal LIKE ?', [`%${search}%`], (err, results) => {
-      if (err) {
-          return res.status(500).json({ message: "Error fetching meals", error: err });
-      }
-
-      const formattedMeals = results.map(meal => {
-          const ingredients = JSON.parse(meal.ingredients);
-          const measurements = JSON.parse(meal.measurements);
-          
-          const formattedIngredients = {};
-          const formattedMeasurements = {};
-
-          for (let i = 1; i <= 20; i++) {
-              formattedIngredients[`strIngredient${i}`] = ingredients[`ingredient${i}`] || null;
-              formattedMeasurements[`strMeasure${i}`] = measurements[`measurement${i}`] || null;
-          }
-
-          return {
-              idMeal: meal.idMeal,
-              strMeal: meal.strMeal,
-              strCategory: meal.strCategory,
-              strArea: meal.strArea,
-              strInstructions: meal.strInstructions,
-              strMealThumb: meal.strMealThumb,
-              strTags: meal.strTags,
-              strYoutube: meal.strYoutube,
-              ...formattedIngredients,
-              ...formattedMeasurements,
-              user_id: meal.user_id,
-              created_at: meal.created_at
-          };
-      });
-
-      res.json({ meals: formattedMeals });
-  });
-});
-
-app.get('/meal/:id', (req, res) => {
-  const mealId = req.params.id;
-
-  const query = 'SELECT * FROM meals WHERE idMeal = ?';
-  db.query(query, [mealId], (err, result) => {
+  // Query your database for meals based on the search term
+  db.query('SELECT * FROM meals WHERE strMeal LIKE ?', [`%${search}%`], async (err, results) => {
     if (err) {
-      console.error(err);
-      return res.status(500).json({ message: 'Database error' });
+      return res.status(500).json({ message: "Error fetching meals", error: err });
     }
 
-    if (!result || result.length === 0) {
-      return res.status(404).json({ message: 'Meal not found!' });
-    }
+    const formattedMeals = [];
+    
+    // Loop through each meal in the results
+    for (const meal of results) {
+      let ingredients = [];
+      let measurements = [];
 
-    const meal = result[0];
-    if (meal) {
-      const ingredients = meal.ingredients ? JSON.parse(meal.ingredients) : [];
-      const measurements = meal.measurements ? JSON.parse(meal.measurements) : [];
+      try {
+        // Handle ingredients: try to parse as JSON or split as CSV
+        if (meal.ingredients) {
+          try {
+            ingredients = JSON.parse(meal.ingredients);  // Attempt to parse as JSON
+          } catch (e) {
+            ingredients = meal.ingredients.split(',');  // Fall back to CSV format if JSON parsing fails
+          }
+        }
+        
+        // Handle measurements: try to parse as JSON or split as CSV
+        if (meal.measurements) {
+          try {
+            measurements = JSON.parse(meal.measurements);  // Attempt to parse as JSON
+          } catch (e) {
+            measurements = meal.measurements.split(',');  // Fall back to CSV format if JSON parsing fails
+          }
+        }
+      } catch (error) {
+        console.error('Error processing ingredients or measurements:', error);
+      }
 
       const formattedIngredients = {};
       const formattedMeasurements = {};
 
+      // Ensure we have 20 ingredients and measurements
       for (let i = 1; i <= 20; i++) {
-        formattedIngredients[`strIngredient${i}`] = ingredients[`ingredient${i}`] || null;
-        formattedMeasurements[`strMeasure${i}`] = measurements[`measurement${i}`] || null;
+        formattedIngredients[`strIngredient${i}`] = ingredients[i - 1] || null;  // Use null if not available
+        formattedMeasurements[`strMeasure${i}`] = measurements[i - 1] || null;  // Use null if not available
       }
 
-      return res.json({
-        meal: {
-          idMeal: meal.idMeal,
-          strMeal: meal.strMeal,
-          strCategory: meal.strCategory,
-          strArea: meal.strArea,
-          strInstructions: meal.strInstructions,
-          strMealThumb: meal.strMealThumb,
-          strTags: meal.strTags,
-          strYoutube: meal.strYoutube,
-          user_id: meal.user_id,
-          created_at: meal.created_at,
-          ...formattedIngredients,
-          ...formattedMeasurements
+      // Check if the meal exists in TheMealDB API
+      try {
+        const { data } = await axios.get(`https://www.themealdb.com/api/json/v1/1/lookup.php?i=${meal.idMeal}`);
+
+        // If the meal exists in TheMealDB API, skip adding it to the result
+        if (data.meals && data.meals.length > 0) {
+          continue;  // Skip this meal if it exists in TheMealDB API
         }
+      } catch (error) {
+        console.error('Error checking TheMealDB API:', error);
+      }
+
+      // If the meal is not found in TheMealDB, add it to the formatted meals
+      formattedMeals.push({
+        idMeal: String(meal.idMeal),  // Ensure idMeal is always a string
+        strMeal: meal.strMeal,
+        strCategory: meal.strCategory,
+        strArea: meal.strArea,
+        strInstructions: meal.strInstructions,
+        strMealThumb: meal.strMealThumb,
+        strTags: meal.strTags,
+        strYoutube: meal.strYoutube,
+        ...formattedIngredients,
+        ...formattedMeasurements,
+        user_id: meal.user_id,
+        created_at: meal.created_at
       });
-    } else {
-      return res.status(400).json({ message: 'Meal data is incomplete or malformed' });
     }
+
+    res.json({ meals: formattedMeals });
   });
 });
+
+
+// search meal by idMeal
+app.get('/meal/:id', (req, res) => {
+  const mealId = req.params.id;
+
+  // Query to fetch meal by ID
+  const query = `SELECT * FROM meals WHERE idMeal = ?`;
+
+  db.query(query, [mealId], (err, results) => {
+    if (err) {
+      return res.status(500).json({ error: 'Database query error' });
+    }
+
+    if (results.length === 0) {
+      return res.status(404).json({ error: 'Meal not found' });
+    }
+
+    const meal = results[0]; // Get the first (and likely only) result
+
+    // Check if ingredients and measurements exist, if not, set to empty array
+    let ingredients = [];
+    let measurements = [];
+
+    try {
+      if (meal.ingredients) {
+        // Attempt to parse ingredients as JSON or split by commas if parsing fails
+        try {
+          ingredients = JSON.parse(meal.ingredients);
+        } catch (e) {
+          ingredients = meal.ingredients.split(',');  // Fall back to CSV format
+        }
+      }
+
+      if (meal.measurements) {
+        // Attempt to parse measurements as JSON or split by commas if parsing fails
+        try {
+          measurements = JSON.parse(meal.measurements);
+        } catch (e) {
+          measurements = meal.measurements.split(',');  // Fall back to CSV format
+        }
+      }
+    } catch (error) {
+      console.error('Error parsing ingredients or measurements:', error);
+    }
+
+    // Prepare the response data
+    const response = {
+      idMeal: String(meal.idMeal),  // Ensure idMeal is a string
+      strMeal: meal.strMeal,
+      strCategory: meal.strCategory,
+      strArea: meal.strArea,
+      strInstructions: meal.strInstructions,
+      strMealThumb: meal.strMealThumb,
+      strTags: meal.strTags,
+      strYoutube: meal.strYoutube,
+      ingredients: ingredients,
+      measurements: measurements
+    };
+
+    // Send the response as JSON
+    res.json(response);
+  });
+});
+
 
 // Add meal to favorites
 app.post('/favorites/add', async (req, res) => {
@@ -348,20 +404,17 @@ app.get('/favorites/:user_id', async (req, res) => {
 
     try {
       const mealPromises = results.map(async (fav) => {
-        // Attempt to get meal details from TheMealDB API first
-        let response = await axios.get(`https://www.themealdb.com/api/json/v1/1/lookup.php?i=${fav.idMeal}`);
-        let meal = response.data.meals ? response.data.meals[0] : null;
+        // Try to get meal details from your custom API using the new /meal/:id endpoint
+        const mealFromCustomAPI = await axios.get(`http://192.168.1.185:8800/meal/${fav.idMeal}`).then(response => response.data ? response.data : null);
 
-        // If not found in TheMealDB API, fall back to custom API
-        if (!meal) {
-          response = await axios.get(`http://192.168.1.185:8800/meal?id=${fav.idMeal}`);
-          meal = response.data.meals ? response.data.meals[0] : null;
-        }
+        // If meal is not found, try fetching from TheMealDB API
+        const mealFromTheMealDB = mealFromCustomAPI ? null : await axios.get(`https://www.themealdb.com/api/json/v1/1/lookup.php?i=${fav.idMeal}`).then(response => response.data.meals ? response.data.meals[0] : null);
 
-        return meal;
+        // Return meal from custom API if available, otherwise return from TheMealDB API
+        return mealFromCustomAPI || mealFromTheMealDB;
       });
 
-      const meals = (await Promise.all(mealPromises)).filter(Boolean); // Filter out null values
+      const meals = (await Promise.all(mealPromises)).filter(Boolean); // Filter out null values if not found in either API
 
       res.status(200).json({ meals });
     } catch (error) {
@@ -369,6 +422,9 @@ app.get('/favorites/:user_id', async (req, res) => {
     }
   });
 });
+
+
+
 
 
 
@@ -397,7 +453,6 @@ app.post('/favorites/remove', (req, res) => {
     });
   });
 });
-
 
 
 // Get the number of users who added a specific meal to their favorites

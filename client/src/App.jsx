@@ -7,7 +7,7 @@ import Signup from "./Page/Signup.jsx"
 import { UserProvider } from "./Context/UserContext.jsx"
 import ProtectedRoute from "./Components/ProtectedRoute.jsx"
 import MealDetail from "./Page/RecipeDetail.jsx"
-
+import Test from './Page/Test.jsx'
 export default function App() {
   return(
     <>
@@ -15,6 +15,8 @@ export default function App() {
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Landing/>} />
+          <Route path="/test" element={<Test/>} />
+
           <Route path="/recipe/:id" element={<MealDetail />} />
           <Route path="/favorites" element={ 
             <ProtectedRoute>
