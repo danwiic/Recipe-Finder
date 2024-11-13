@@ -40,6 +40,18 @@
 
                     .btn__view{
                         width: 100%;
+                        background-color: transparent;
+                        outline: 2px solid #493628;
+                        color: #493628;
+                        cursor: pointer;
+                        font-weight: 700;
+                        border: none;
+                        border-radius: 4px;
+                    }
+
+                    .btn__view:hover{
+                        background-color: #493628;
+                        color: white;
                     }
                 }
 

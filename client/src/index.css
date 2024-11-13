@@ -33,6 +33,7 @@ html, body {
   height: 100vh; 
   margin: 0;    
   background-color: #e3e3e3e6 ;
+  color: #493628;
 }
 
 h1{
@@ -51,6 +52,8 @@ h3{
 button{
   font-family: inherit;
   padding: 10px 16px;
+  color: inherit;
+  font-weight: BOLD;
 }
 
 a{

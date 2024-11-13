@@ -22,11 +22,14 @@ export default function Recipe() {
         fetchFavorite();
     }, []);
 
+    console.log("user", user);
+    
+
     const fetchFavorite = async () => {
         try {
             setLoading(true);
             const res = await axios.get(`http://192.168.1.185:8800/favorites/${user.id}`);
-            console.log("res:" ,res.data)
+            console.log(res.data)
             const mealsWithRatings = await Promise.all(
                 res.data.meals.map(async (meal) => {
                     const avgRating = await fetchAverageRating(meal.idMeal);

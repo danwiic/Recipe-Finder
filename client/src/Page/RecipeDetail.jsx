@@ -139,8 +139,8 @@ useEffect(() => {
 
     if (ingredientList.length > 0) {
       try {
-        const appId = '3b66e8b7'
-        const appKey = '780bda1b571b2b37b58a54c5e738a464'
+        const appId = 'f1d29244'
+        const appKey = '56070457df8b8e4f0a569b6563daf074'
 
         const response = await axios.post(
           `https://api.edamam.com/api/nutrition-details?app_id=${appId}&app_key=${appKey}`,
@@ -273,14 +273,16 @@ const fetchUserRating = async (mealId) => {
 
           <div className="vid__con"
           >
-              <div className="fav__action">
+            <div className="fav__action">
               <span className='rating__data'>({ratingData.averageRating.toFixed(1)} <IoStar /> || {ratingData.ratingCount} Reviews)</span>
-                  {isFavorite ? (
-                      <button className='fav__btn remove' onClick={handleRemoveFromFavorites}>REMOVE FROM FAVORITES</button>
-                    ) : (
-                      <button className='fav__btn' onClick={handleAddToFavorites}>ADD TO FAVORITES</button>
-                  )}
-              </div>
+                 {user && (
+                   isFavorite ? (
+                    <button className='fav__btn remove' onClick={handleRemoveFromFavorites}>REMOVE FROM FAVORITES</button>
+                  ) : (
+                    <button className='fav__btn' onClick={handleAddToFavorites}>ADD TO FAVORITES</button>
+                  )
+                 )}
+            </div>
 
             <div className="con meal__video ">
               <ReactPlayer 
@@ -301,11 +303,13 @@ const fetchUserRating = async (mealId) => {
                   </div>
                   
                     
-                    <button 
-                      className='btn__rate' 
-                      onClick={() => handleRateMeal(meal)}
-                      >RATE THE MEAL
-                    </button>
+                   {user && (
+                     <button 
+                     className='btn__rate' 
+                     onClick={() => handleRateMeal(meal)}
+                     >RATE THE MEAL
+                   </button>
+                   )}
                 </div>
             )}
 

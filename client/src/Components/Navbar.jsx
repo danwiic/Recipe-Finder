@@ -41,7 +41,7 @@ export default function Navbar({}) {
         setOpen(false)
 
         // Redirect to home page
-        navigate("/"); 
+        navigate("/login"); 
       }
     } catch (error) {
       console.error("Logout failed", error);
@@ -78,7 +78,7 @@ export default function Navbar({}) {
             </NavLink>
           ) : (
             <button 
-              className="btn__goToLogin"
+              className="btn__goToLogout"
               onClick={() => setOpen(true)}
             >
               LOGOUT

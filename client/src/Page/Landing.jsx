@@ -5,6 +5,9 @@ import './Style/Landing.css';
 import axios from "axios";
 import searchIcon from '/search.png';
 import { useNavigate } from 'react-router-dom';
+import { Rating } from 'react-simple-star-rating';
+import { useUser } from '../Context/UserContext';
+useUser
 
 export default function Landing() {
     const [search, setSearch] = useState({ search: "" });
@@ -12,13 +15,12 @@ export default function Landing() {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
     const navigate = useNavigate();
+    const {user} = useUser()
 
     useEffect(() => {
-        const storedSearch = localStorage.getItem('search');
-        const storedResults = localStorage.getItem('results');
         
-        if (storedSearch) setSearch({ search: storedSearch });
-        if (storedResults) setResults(JSON.parse(storedResults));
+        
+      
     }, []);
 
     const handleChange = (e) => {
@@ -69,10 +71,20 @@ export default function Landing() {
     
             const combinedResults = [...mealDbResults, ...customApiResults];
             
-            if (combinedResults.length > 0) {
-                setResults(combinedResults);
-                localStorage.setItem('search', search.search);
-                localStorage.setItem('results', JSON.stringify(combinedResults));
+
+            const mealsWithRatings = await Promise.all(
+                combinedResults.map(async (meal) => {
+                    const avgRating = await fetchAverageRating(meal.idMeal);
+                    return { ...meal, averageRating: avgRating };
+                })
+            );
+
+            setResults(mealsWithRatings)
+            
+            
+            
+            if (mealsWithRatings.length > 0) {
+                setResults(mealsWithRatings);
             } else {
                 setError("No meals found for your search.");
             }
@@ -86,7 +98,19 @@ export default function Landing() {
 
     const handleViewRecipe = (recipe) => {
         navigate(`/recipe/${recipe.idMeal}`);
+    }
+
+    const fetchAverageRating = async (mealId) => {
+        try {
+            const res = await axios.get(`http://192.168.1.185:8800/ratings/average/${mealId}`);
+            return res.data || 0
+        } catch (error) {
+            console.error(error);
+            return 0;
+        }
     };
+    
+console.log("results: 1 ", results);
 
     return (
         <div className="recipe__container">
@@ -123,7 +147,7 @@ export default function Landing() {
                             <div className="meal__result_con">
                                 {results.map(result => (
                                     <div className="meal__list" key={result.idMeal}>
-
+                                        
                                     
                                        <div className="img__con">
                                        <img 
@@ -138,6 +162,27 @@ export default function Landing() {
                                         <div className="content">
                                             <div className="content__details">
                                                 <div className='meal__cat'>Category: {result.strCategory}</div>
+                                                   {result.averageRating ? (
+                                                     <span className='meal__rating'>
+                                                     {result.averageRating.averageRating.toFixed(1)}
+                                                         <Rating
+                                                         readonly
+                                                         initialValue={result.averageRating.averageRating}  
+                                                         className="rate"
+                                                     />
+                                                     ({result.averageRating.ratingCount})
+                                                 </span> 
+                                                   ) : (
+                                                    <span className='meal__rating'>
+                                                        0
+                                                         <Rating
+                                                         readonly
+                                                         initialValue={0}  
+                                                         className="rate"
+                                                     />
+                                                     (0)
+                                                    </span>
+                                                   )}
                                                 <button 
                                                     className="view__recipe"
                                                     onClick={() => handleViewRecipe(result)}  

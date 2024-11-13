@@ -19,39 +19,80 @@ app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`)
 })
 
-const JWT_SECRET = 'super_secret_promise';
+// CREATE ACCOUNT
+app.post("/signup", (req, res) => {
+  const { username, email, password, confirmPassword } = req.body;
 
+  if (password !== confirmPassword) {
+    return res.status(400).json({ message: "Password did not match" });
+  }
+
+  // Check if the username or email already exists
+  const checkQuery = `SELECT * FROM users WHERE username = ? OR email = ?`;
+  db.query(checkQuery, [username, email], (err, results) => {
+    if (err) {
+      return res.status(500).json({ message: "Database error" });
+    }
+
+    if (results.length > 0) {
+      if (results[0].username === username) {
+        return res.status(400).json({ message: "Username is already used" });
+      }
+      if (results[0].email === email) {
+        return res.status(400).json({ message: "Email is already used" });
+      }
+    }
+
+    // Insert the new user into the database without password hashing
+    const insertQuery = `INSERT INTO users (username, email, password) VALUES (?, ?, ?)`;
+    db.query(insertQuery, [username, email, password], (err, result) => {
+      if (err) {
+        return res.status(500).json({ message: "Error creating user" });
+      }
+
+      res.status(201).json({ message: "User created successfully" });
+    });
+  });
+});
+
+const JWT_SECRET = 'super_secret_promise';
 app.post("/login", (req, res) => {
   const { username, password } = req.body;
-  const q = `SELECT * FROM users WHERE username = ? AND password = ?`;
 
-  db.query(q, [username, password], (err, results) => {
+  const q = `SELECT * FROM users WHERE username = ?`;
+
+  db.query(q, [username], (err, results) => {
     if (err) {
       return res.status(500).json({ error: "Database error" });
     }
 
     if (results.length > 0) {
-      const user = results[0]
+      const user = results[0];
 
-      const token = jwt.sign(
-        { id: user.id, username: user.username },
-        JWT_SECRET,
-        { expiresIn: '1h' }
-      );
+      // Check if the password matches (no hashing here)
+      if (user.password === password) {
+        const token = jwt.sign(
+          { id: user.id, username: user.username },
+          JWT_SECRET,
+          { expiresIn: '1h' }
+        );
 
-      res.status(200).json({ 
-        Status: "Success", 
-        message: "Login successful",
-        user: {
-          id: user.user_id,
-          username: user.username,
-          isLoggedIn: true
-        },
-        token: token
-      });
-      console.log(user);
+        return res.status(200).json({
+          Status: "Success",
+          message: "Login successful",
+          user: {
+            id: user.user_id,
+            username: user.username,
+            isLoggedIn: true
+          },
+          token: token
+        });
+      } else {
+        // Incorrect password
+        return res.status(404).json({ error: "Invalid username or password" });
+      }
     } else {
-      res.status(401).json({ error: "Invalid username or password" });
+      return res.status(401).json({ error: "Invalid username or password" });
     }
   });
 });
@@ -193,7 +234,7 @@ app.get('/meal/:id', (req, res) => {
 });
 
 // Add meal to favorites
-app.post('/favorites', async (req, res) => {
+app.post('/favorites/add', async (req, res) => {
   const { idMeal, user_id } = req.body;
 
   // Check if the meal already exists in the meals table
@@ -290,8 +331,6 @@ app.post('/favorites', async (req, res) => {
     }
   });
 });
-
-
 
 // Fetch the meals that are added to favorites by the user
 app.get('/favorites/:user_id', async (req, res) => {
