@@ -19,6 +19,7 @@
         svg{
             font-size: 1.2rem;
             margin: 0px 5px;
+            color: #ffbc0b;
         }
     }
 
@@ -58,7 +59,7 @@
         
         .meal__video__container {
             display: grid;
-            grid-template-columns: 700px;
+            grid-template-columns: 900px;
             gap: 40px;
             width: 100%;
             margin-bottom: 30px;
@@ -84,6 +85,9 @@
 
                 .fav__action{
                     margin-bottom: 10px;
+                    display: flex;
+                    justify-content: space-between;
+
 
                     .fav__btn {
                         all: unset;

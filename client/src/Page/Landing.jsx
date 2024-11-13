@@ -120,28 +120,38 @@ export default function Landing() {
                         {results && results.length > 0 && (
                             <div className="meal__result">
                                 <h3 className="search__result">Results:</h3>
+                            <div className="meal__result_con">
                                 {results.map(result => (
                                     <div className="meal__list" key={result.idMeal}>
-                                        <img 
+
+                                    
+                                       <div className="img__con">
+                                       <img 
                                             id={result.idMeal} 
                                             src={result.strMealThumb} 
                                             alt={result.strMeal} 
                                             className="meal__img" 
                                         />
+                                        </div> 
+                                        <div className="meal__name">{result.strMeal.toUpperCase()}</div>
+
                                         <div className="content">
-                                            <div className="meal__name">{result.strMeal}</div>
                                             <div className="content__details">
-                                                <div>Category: {result.strCategory}</div>
+                                                <div className='meal__cat'>Category: {result.strCategory}</div>
                                                 <button 
                                                     className="view__recipe"
                                                     onClick={() => handleViewRecipe(result)}  
                                                 >
-                                                    View Recipe
+                                                    VIEW RECIPE
                                                 </button>
-                                          </div>
+                                            </div>
                                         </div>
+
                                     </div>
                                 ))}
+                            </div>
+                                
+                              
                             </div>
                         )}
                     </div>

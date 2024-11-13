@@ -167,7 +167,7 @@ useEffect(() => {
   }
   useEffect(() => {
     fetchRatingData()
-  }, [ratingData])
+  }, [])
 
   const handleAddToFavorites = async () => {
     try {
@@ -265,14 +265,16 @@ const fetchUserRating = async (mealId) => {
           {meal.strMeal}
         </h2>
 
-        <span className='rating__data'>({ratingData.averageRating.toFixed(1)} <IoStar /> || {ratingData.ratingCount} Reviews)</span>
+     
         
 
         <div className="meal__detail__layout">
           <div className="meal__video__container">
 
-          <div className="vid__con">
+          <div className="vid__con"
+          >
               <div className="fav__action">
+              <span className='rating__data'>({ratingData.averageRating.toFixed(1)} <IoStar /> || {ratingData.ratingCount} Reviews)</span>
                   {isFavorite ? (
                       <button className='fav__btn remove' onClick={handleRemoveFromFavorites}>REMOVE FROM FAVORITES</button>
                     ) : (
@@ -297,8 +299,13 @@ const fetchUserRating = async (mealId) => {
                     <div>Calories per Serving: <span className='nutrition__details'>{Math.round(nutrition.calories / nutrition.yield)}cal</span></div>
                     <div>Grams per Serving: <span className='nutrition__details'>{Math.round(nutrition.totalWeight / nutrition.yield)}g</span></div>
                   </div>
+                  
                     
-                    <button onClick={() => handleRateMeal(meal)}>RATE THE MEAL</button>
+                    <button 
+                      className='btn__rate' 
+                      onClick={() => handleRateMeal(meal)}
+                      >RATE THE MEAL
+                    </button>
                 </div>
             )}
 

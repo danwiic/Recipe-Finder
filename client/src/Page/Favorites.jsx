@@ -4,7 +4,6 @@ import "./Style/Favorites.css";
 import axios from 'axios';
 import { useUser } from "../Context/UserContext";
 import Loader from "../Components/Loader";
-import { IoStar } from "react-icons/io5";
 import { FaPlus } from "react-icons/fa";
 import { useNavigate } from "react-router";
 import { Rating } from 'react-simple-star-rating';
@@ -27,6 +26,7 @@ export default function Recipe() {
         try {
             setLoading(true);
             const res = await axios.get(`http://192.168.1.185:8800/favorites/${user.id}`);
+            console.log("res:" ,res.data)
             const mealsWithRatings = await Promise.all(
                 res.data.meals.map(async (meal) => {
                     const avgRating = await fetchAverageRating(meal.idMeal);

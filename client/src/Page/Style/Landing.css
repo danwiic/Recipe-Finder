@@ -70,62 +70,90 @@
     .meal__result{
 
 
+
+        .meal__result_con{
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            padding: 10px;
+            gap: 10px;
+
+            @media(width <= 1100px){
+                grid-template-columns: repeat(4, 1fr);
+            }
+            @media(width <= 700px){
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+
+            .meal__list{
+                margin-bottom: 13px;
+                display: flex;
+                box-shadow: rgba(0, 0, 0, 0.24) 0px 3px 8px;
+                background: #FFF8DE;
+                flex-direction: column;
+                border-radius: 12px;
+                gap: 5px;
+                width: 100%;
+    
+                @media(width <= 1000px){
+                    width: 100%;
+                    margin: auto;
+                    margin-bottom: 13px;
+                }
+    
+                .meal__name{
+                    font-size: 1rem;
+                    height: 30px;
+                    font-weight: 600;
+                    overflow: hidden;
+                    padding: 8px;
+                }
+    
+                .content{
+                    padding: 6px;
+                    width: 100%;
+    
+                    .content__details{
+                        display: flex;
+                        flex-direction: column;
+
+                        .meal__cat{
+                            font-size: .9rem;
+                        }
+    
+                        .view__recipe{
+                            padding: 10px;
+                            background-color: transparent;
+                            border-radius: 4px;
+                            cursor: pointer;
+                            border: none;
+                            font-weight: 700;
+                            color: #493628;
+                            margin-top: 10px;
+                            outline: 2px solid #493628;
+                          
+                        }
+                        .view__recipe:hover{
+                            background-color: #493628;
+                            color: #FFF8DE;
+                        }
+                    }
+                }
+           }
+        }
+
         .search__result{
             margin-bottom: 10px;
             font-size: 1.3rem;
         }
 
-       .meal__list{
-            margin-bottom: 13px;
-            display: flex;
-            box-shadow: rgba(0, 0, 0, 0.24) 0px 3px 8px;
-            background: #FFF8DE;
-            padding: 5px;
-            border-radius: 12px;
-            min-width: 700px;
+        .img__con{
             width: 100%;
 
-            @media(width <= 1000px){
+            .meal__img{
                 width: 100%;
-                margin: auto;
-                margin-bottom: 13px;
+                border-radius: 8px 8px 0 0;
             }
-
-            .meal__name{
-                font-size: 1.3rem;
-                margin-bottom: 40px;
-                font-weight: 600;
-            }
-
-            .content{
-                padding: 6px;
-                width: 100%;
-
-                .content__details{
-                    display: flex;
-                    justify-content: space-between;
-                    align-items: center;
-
-                    .view__recipe{
-                        padding: 10px;
-                        background-color: #abe093;
-                        border-radius: 12px;
-                        cursor: pointer;
-                        border: none;
-                        font-weight: 600;
-                        color: rgb(62, 61, 61);
-                        box-shadow: rgba(60, 64, 67, 0.3) 0px 1px 2px 0px, rgba(60, 64, 67, 0.15) 0px 1px 3px 1px;
-                    }
-                    .view__recipe:hover{
-                        background-color: #5a8746;
-                    }
-                }
-            }
-       }
-
-        .meal__img{
-            width: 100px;
-            border-radius: 12px;
         }
     }
    }
