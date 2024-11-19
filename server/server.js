@@ -83,7 +83,8 @@ app.post("/login", (req, res) => {
           user: {
             id: user.user_id,
             username: user.username,
-            isLoggedIn: true
+            isLoggedIn: true,
+            role: user.role
           },
           token: token
         });
@@ -424,10 +425,6 @@ app.get('/favorites/:user_id', async (req, res) => {
 });
 
 
-
-
-
-
 // Remove meal from favorites
 app.post('/favorites/remove', (req, res) => {
   const { idMeal, user_id } = req.body;
@@ -456,22 +453,7 @@ app.post('/favorites/remove', (req, res) => {
 
 
 // Get the number of users who added a specific meal to their favorites
-app.get('/favorites/count/:idMeal', (req, res) => {
-  const idMeal = req.params.idMeal;
 
-  // Query to count the number of users who added the meal to their favorites
-  const query = 'SELECT COUNT(*) AS favoritesCount FROM favorites WHERE idMeal = ?';
-  
-  db.query(query, [idMeal], (err, result) => {
-    if (err) {
-      return res.status(500).json({ message: 'Database error', error: err });
-    }
-
-    // Return the count of users who favorited the meal
-    const favoritesCount = result[0].favoritesCount;
-    res.status(200).json({ idMeal, favoritesCount });
-  });
-});
 
 // RATING A MEAL
 app.post('/rate', (req, res) => {
@@ -558,3 +540,117 @@ app.get('/meal/:idMeal/ratings/count', (req, res) => {
     }
   );
 });
+
+// top 5 favorite meal
+app.get('/top_meals', async (req, res) => {
+  // Step 1: Get the top 5 favorited meal IDs
+  db.query(
+    `SELECT idMeal, COUNT(*) AS favorite_count 
+     FROM favorites 
+     GROUP BY idMeal 
+     ORDER BY favorite_count DESC 
+     LIMIT 5`, // Get the top 5 meals with the highest counts
+    async (err, results) => {
+      if (err) {
+        return res.status(500).json({ message: "Database error", error: err });
+      }
+
+      if (results.length === 0) {
+        return res.status(404).json({ message: "No favorites found" });
+      }
+
+      try {
+        // Step 2: For each meal ID, attempt to fetch meal details
+        const mealPromises = results.map(async (row) => {
+          const mealId = row.idMeal;
+          const favoriteCount = row.favorite_count;
+
+          // Try to fetch meal details from custom API first
+          const mealFromCustomAPI = await axios
+            .get(`http://192.168.1.185:8800/meal/${mealId}`)
+            .then(response => response.data ? response.data : null)
+            .catch(() => null);
+
+          // If not found in custom API, fetch from TheMealDB API
+          const mealFromTheMealDB = mealFromCustomAPI
+            ? null
+            : await axios
+                .get(`https://www.themealdb.com/api/json/v1/1/lookup.php?i=${mealId}`)
+                .then(response => response.data.meals ? response.data.meals[0] : null)
+                .catch(() => null);
+
+          const mealDetails = mealFromCustomAPI || mealFromTheMealDB;
+
+          if (mealDetails) {
+            // Include favorite count with meal details
+            mealDetails.favoriteCount = favoriteCount;
+          }
+
+          return mealDetails;
+        });
+
+        // Step 3: Resolve all promises and filter out any null values
+        const topMeals = (await Promise.all(mealPromises)).filter(Boolean);
+
+        res.status(200).json({ topMeals });
+      } catch (error) {
+        return res.status(500).json({ message: "Error fetching meal details", error: error });
+      }
+    }
+  );
+});
+
+// top 5 high rated meal
+app.get('/top_rated', (req, res) => {
+  const query = `
+    SELECT m.*, AVG(r.rating) AS averageRating, COUNT(r.rating) AS ratingCount
+    FROM meals m
+    JOIN ratings r ON m.idMeal = r.meal_id  -- Use 'meal_id' from ratings table
+    GROUP BY m.idMeal
+    HAVING ratingCount >= 5  -- Optional: only consider meals with 5 or more ratings
+    ORDER BY averageRating DESC, ratingCount DESC
+    LIMIT 5;
+  `;
+
+  db.query(query, (err, results) => {
+    if (err) {
+      return res.status(500).json({ message: "Database query error", error: err });
+    }
+
+    if (results.length === 0) {
+      return res.status(404).json({ message: "No ratings found" });
+    }
+    res.status(200).json({ topRatedMeals: results });
+  });
+});
+
+
+app.get('/meals/user/:user_id', (req, res) => {
+  const { user_id } = req.params;
+
+  // Query to fetch meals added by a specific user with their average rating and rating count
+  const query = `
+    SELECT m.*, 
+           AVG(r.rating) AS averageRating, 
+           COUNT(r.rating) AS ratingCount
+    FROM meals m
+    LEFT JOIN ratings r ON m.idMeal = r.meal_id
+    WHERE m.user_id = ?
+    GROUP BY m.idMeal;
+  `;
+
+  db.query(query, [user_id], (err, results) => {
+    if (err) {
+      return res.status(500).json({ message: "Database error", error: err });
+    }
+
+    if (results.length === 0) {
+      return res.status(404).json({ message: "No meals found for this user" });
+    }
+
+    res.status(200).json({ meals: results });
+  });
+});
+
+
+

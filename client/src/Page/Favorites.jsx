@@ -96,7 +96,7 @@ export default function Recipe() {
         <>
             <Layout>
                 <div className="fav__layout">
-                    <h2>Favorites</h2>
+                    <h2>FAVORITES</h2>
 
                     {loading ? (
                         <div className="loader">
@@ -107,34 +107,35 @@ export default function Recipe() {
                             <div className="favorite__list">
                                {favorites.map((meal, index) => (
                                     <div key={index} className="meal__item">
-                                        <div className="meal__name">{meal.strMeal}</div>
+                                        <div className="meal__name">{meal.strMeal.toUpperCase()}</div>
 
                                         <div className="meal__item__layout">
                                             <img src={meal.strMealThumb} alt={meal.strMeal} />
 
-                                            <div className="ratings">
-                                                <span>
-                                                    {meal.averageRating.toFixed(1)}
-                                                        <Rating
-                                                        readonly
-                                                        initialValue={meal.averageRating}  
-                                                        className="rate"
-                                                     />
-                                                </span> 
-                                               
-                                                <button  
-                                                    onClick={() => handleRateMeal(meal)}
-                                                    >RATE
-                                                </button>
-                                            </div>
+                                                <div className="ratings">
+                                                    <span>
+                                                        {meal.averageRating.toFixed(1)}
+                                                            <Rating
+                                                            readonly
+                                                            initialValue={meal.averageRating}  
+                                                            className="rate"
+                                                        />
+                                                    </span> 
+                                                
+                                                    <button 
+                                                        className="btn__rate" 
+                                                        onClick={() => handleRateMeal(meal)}
+                                                        >RATE
+                                                    </button>
+                                                </div>
 
-                                            <div className="action">
-                                                <button 
-                                                    className="btn__view"
-                                                    onClick={() => handleViewRecipe(meal)}
-                                                >VIEW RECIPE
-                                                </button>
-                                            </div>
+                                                <div className="action">
+                                                    <button 
+                                                        className="btn__view"
+                                                        onClick={() => handleViewRecipe(meal)}
+                                                    >VIEW RECIPE
+                                                    </button>
+                                                </div>
                                         </div>
                                     </div>
                                 ))}
@@ -157,7 +158,7 @@ export default function Recipe() {
                             initialValue={rating}
                             className="rate"
                         />
-                        <button onClick={handleSubmitRating}>Submit Rating</button>
+                        <button className="btn__submit_rate" onClick={handleSubmitRating}>Submit Rating</button>
                     </div>
                 </Popup>
             </Layout>

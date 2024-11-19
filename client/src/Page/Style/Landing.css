@@ -10,7 +10,6 @@
     }
 
     .searchbar{
-        box-shadow: rgba(0, 0, 0, 0.16) 0px 3px 6px, rgba(0, 0, 0, 0.23) 0px 3px 6px;
         border-radius: 12px;
     }
     
@@ -42,7 +41,11 @@
         width: 100%;
         border-radius: 12px 0 0 12px;
         border: none;
-        outline: none;
+        outline: 1px solid grey;
+    }
+
+    input:focus{
+        outline: 1px solid #493628;
     }
 
     button{
@@ -54,6 +57,7 @@
         cursor: pointer;
         color: rgb(232, 232, 232);
         font-weight: bold;
+        outline: 1px solid grey;
     }
     button:hover{
         background: rgb(150, 150, 150);
@@ -89,7 +93,7 @@
                 margin-bottom: 13px;
                 display: flex;
                 box-shadow: rgba(0, 0, 0, 0.24) 0px 3px 8px;
-                background: #FFF8DE;
+                background: #eeeeee;
                 flex-direction: column;
                 border-radius: 12px;
                 gap: 5px;
@@ -107,11 +111,11 @@
                     height: 30px;
                     font-weight: 600;
                     overflow: hidden;
-                    padding: 8px;
+                    padding: 10px;
                 }
     
                 .content{
-                    padding: 6px;
+                    padding: 15px;
                     width: 100%;
     
                     .content__details{
@@ -173,9 +177,131 @@
 
             .meal__img{
                 width: 100%;
-                border-radius: 8px 8px 0 0;
+            border-radius: 8px 8px 0 0;
+            object-fit: cover;
+            height: 100%;
             }
         }
     }
    }
+}
+
+.top__meal{
+    margin-top: 40px;
+    padding: 40px;
+
+
+    .meals{
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        padding: 10px;
+        gap: 10px;
+
+        @media(width <= 1100px){
+            grid-template-columns: repeat(4, 1fr);
+        }
+        @media(width <= 700px){
+            grid-template-columns: repeat(2, 1fr);
+        }
+
+
+        .meal__list{
+            margin-bottom: 13px;
+            display: flex;
+            box-shadow: rgba(0, 0, 0, 0.24) 0px 3px 8px;
+            background: #eeeeee;
+            flex-direction: column;
+            border-radius: 12px;
+            gap: 5px;
+            width: 100%;
+            transition: all .5s ease;
+
+            @media(width <= 1000px){
+                width: 100%;
+                margin: auto;
+                margin-bottom: 13px;
+            }
+
+            .meal__name{
+                font-size: 1rem;
+                height: 30px;
+                font-weight: 600;
+                overflow: hidden;
+                padding: 10px;
+            }
+
+            .content{
+                padding: 15px;
+                width: 100%;
+
+                .content__details{
+                    display: flex;
+                    flex-direction: column;
+
+                    .fav__count{
+                        font-size: .9rem;
+
+                        .no__count{
+                            justify-content: center;
+                            align-items: center;
+                            font-weight: bold;
+                        }
+                    }
+
+                    .meal__rating{
+                        display: inherit;
+                        align-items: center;
+                       
+
+                        svg{
+                            height: 20px;
+                            width: 25px;
+                          
+                        }
+                    }
+
+                    .meal__cat{
+                        font-size: .9rem;
+                        margin: 10px 0;
+                    }
+
+                    .view__recipe{
+                        padding: 10px;
+                        background-color: transparent;
+                        border-radius: 4px;
+                        cursor: pointer;
+                        border: none;
+                        font-weight: 700;
+                        color: #493628;
+                        margin-top: 10px;
+                        outline: 2px solid #493628;
+                      
+                    }
+                    .view__recipe:hover{
+                        background-color: #493628;
+                        color: #FFF8DE;
+                       
+                    }
+                }
+            }
+       }
+       
+       .meal__list:hover{
+            transform: translate(10px, -20px);
+            box-shadow: rgba(0, 0, 0, 0.25) 0px 14px 28px, rgba(0, 0, 0, 0.22) 0px 10px 10px;
+       }
+    }
+    .img__con{
+        width: 100%;
+        max-height: 100%;
+
+        .meal__img{
+            width: 100%;
+            border-radius: 8px 8px 0 0;
+            object-fit: cover;
+            height: 100%;
+            max-height: 100%;
+
+        }
+    }
 }

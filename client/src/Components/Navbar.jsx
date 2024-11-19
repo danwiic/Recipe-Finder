@@ -6,6 +6,7 @@ import { useUser } from '../Context/UserContext'; // Use context to check login 
 import axios from 'axios';
 import Popup from "../Components/PopupS";
 import { FaRegQuestionCircle } from "react-icons/fa";
+import { GiHamburgerMenu } from "react-icons/gi";
 
 
 export default function Navbar({}) {
@@ -14,11 +15,22 @@ export default function Navbar({}) {
   const [open, setOpen] = useState(false);
   const navigate = useNavigate(); // Move navigate here to the top level
 
-  const navBar = [
-    { path: '/', name: "HOME" },
+  const navBar = user && user.role === 'admin' ? [
+    { path: '/home', name: "HOME" },
+    { path: '/dashboard', name:'DASHBOARD'},
     { path: '/favorites', name: "FAVORITES" },
-    { path: '/planner', name: "PLANNER" },
-  ];
+    { path: '/meals', name: "MEALS" },
+  ] : [
+    { path: '/home', name: "HOME" },
+    { path: '/favorites', name: "FAVORITES" },
+    { path: '/meals', name: "MEALS" },
+  ]
+
+  const [isMenuOpen, setMenuOpen] = useState(false)
+
+  const openMenu = () => {
+    setMenuOpen(prev => !prev)
+  }
 
   const isLoginPage = location.pathname === '/login' || location.pathname === '/signup';
 
@@ -32,16 +44,14 @@ export default function Navbar({}) {
       const res = await axios.post("http://192.168.1.185:8800/logout");
 
       if (res.status === 200) {
-        // Clear the user from the context and localStorage
         localStorage.removeItem("user");
         localStorage.removeItem("accessToken");
 
-        // Reset user context if you're using context API
         setUser(null);
         setOpen(false)
 
-        // Redirect to home page
-        navigate("/login"); 
+        // Redirect to login page
+        navigate("/"); 
       }
     } catch (error) {
       console.error("Logout failed", error);
@@ -52,8 +62,8 @@ export default function Navbar({}) {
     <div className='navbar__container__parent'>
       <div className="navbar__container" style={isLoginPage ? myStyle : {}}>
         <div className="logo">
-          <Link to='/'><
-            GiRadarSweep />
+          <Link to='/'>
+          < GiRadarSweep />
              RecipeRadar
           </Link>
         </div>
@@ -70,7 +80,6 @@ export default function Navbar({}) {
           ))}
         </div>
 
-        {/* Conditionally render login button */}
         {!isLoginPage && (
           !user ? (
             <NavLink to="/login">
@@ -86,6 +95,13 @@ export default function Navbar({}) {
           )
         )}
 
+       <div className="mobile__menu">
+       <GiHamburgerMenu 
+          className={isMenuOpen? "openMenu nav__menu" : "closeMenu nav__menu"} 
+          onClick={openMenu}
+        />
+       </div>
+
         {open && (
           <Popup trigger={open}>
             <div className="confirmation__container">
@@ -99,8 +115,40 @@ export default function Navbar({}) {
             </div>
           </Popup>
         )}
+
+
         
       </div>
+
+      {isMenuOpen && (
+      <div className="mobile__nav">
+        <ul className="mobile__links">
+          <li>
+            <Link to={'/'}>HOME</Link>
+          </li>
+          <li>
+            <Link to={'/favorites'}>FAVORITES</Link>
+          </li>
+          <li>
+            <Link to={'/meals'}>MEALS</Link>
+          </li>
+          <li>
+            {!user ? (
+              <NavLink to="/">
+                <button className="btn__goToLogin">LOGIN</button>
+              </NavLink>
+            ) : (
+              <button 
+                className="btn__goToLogout"
+                onClick={() => setOpen(true)}
+              >
+                LOGOUT
+              </button>
+            )}
+          </li>
+        </ul>
+      </div>
+    )}
       
     </div>
   );

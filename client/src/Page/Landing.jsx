@@ -15,12 +15,13 @@ export default function Landing() {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
     const navigate = useNavigate();
+    const [topMeal, setTopMeal] = useState([])
     const {user} = useUser()
+    const [ratedMeal, setRatedMeal] = useState({})
 
     useEffect(() => {
-        
-        
-      
+      fetchTopMeal()
+      fetchTopRatedMeal()
     }, []);
 
     const handleChange = (e) => {
@@ -53,6 +54,37 @@ export default function Landing() {
             measurements: formattedMeasurements,
         };
     };
+
+    const fetchTopMeal = async () => {
+        try{
+            setLoading(true)
+            const res = await axios.get("http://192.168.1.185:8800/top_meals")
+            const topMeals = res.data.topMeals
+            setTopMeal(topMeals)
+        }catch(error){
+            console.error(error);
+        }finally{
+            setLoading(false)
+        }
+    }
+
+    const fetchTopRatedMeal = async () => {
+        try {
+            setLoading(true);
+            const res = await axios.get("http://192.168.1.185:8800/top_rated");
+            const topRatedMeal = res.data.topRatedMeals; // Access the topRatedMeals array directly
+            setRatedMeal(topRatedMeal); // Update the state with the array of meals
+            console.log("Top Rated Meals:", topRatedMeal); // Log the meals for debugging
+        } catch (error) {
+            console.error(error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+
+console.log("lolo: ", ratedMeal);
+
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -130,7 +162,7 @@ console.log("results: 1 ", results);
                             className="btn__search" 
                             type="submit"
                         >
-                            Search
+                            FIND
                         </button>
                     </form>
 
@@ -195,12 +227,110 @@ console.log("results: 1 ", results);
                                     </div>
                                 ))}
                             </div>
-                                
-                              
-                            </div>
+                          </div>
                         )}
                     </div>
                 </div> 
+
+
+                {ratedMeal && ratedMeal.length > 0 ? (
+                <div className="top__meal">
+                    <h3>TOP 5 HIGH RATED RECIPES</h3>
+                    <div className="meals">
+                    {ratedMeal.map((result) => (
+                        <div className="meal__list" key={result.idMeal}>
+                        <div className="img__con">
+                            <img 
+                            id={result.idMeal} 
+                            src={result.strMealThumb} 
+                            alt={result.strMeal} 
+                            className="meal__img" 
+                            />
+                        </div>
+                        <div className="meal__name">{result.strMeal.toUpperCase()}</div>
+                        <div className="content">
+                            <div className="content__details">
+                            <div className='meal__cat'>Category: {result.strCategory}</div>
+                            {result.averageRating ? (
+                                <span className='meal__rating'>
+                                {result.averageRating.toFixed(1)}
+                                <Rating
+                                    readonly
+                                    initialValue={result.averageRating}  
+                                    className="rate"
+                                />
+                                ({result.ratingCount})
+                                </span>
+                            ) : (
+                                <span className='meal__rating'>
+                                0
+                                <Rating
+                                    readonly
+                                    initialValue={0}  
+                                    className="rate"
+                                />
+                                (0)
+                                </span>
+                            )}
+                            <button 
+                                className="view__recipe"
+                                onClick={() => handleViewRecipe(result)}  
+                            >
+                                VIEW RECIPE
+                            </button>
+                            </div>
+                        </div>
+                        </div>
+                    ))}
+                    </div>
+                </div>
+                ) : (
+                <div>No top-rated recipes available.</div>
+                )}
+
+                {topMeal && (
+                    <div className="top__meal">
+                        <h3>TOP 5 FAVORITE RECIPE</h3>
+                    <div className='meals'>
+                        {topMeal.map((result, i) => (
+                                <div className="meal__list" key={result.idMeal}>
+                                        <div className="img__con">
+                                        <img 
+                                             id={result.idMeal} 
+                                             src={result.strMealThumb} 
+                                             alt={result.strMeal} 
+                                             className="meal__img" 
+                                         />
+                                         </div> 
+                                         <div className="meal__name">{result.strMeal.toUpperCase()}</div>
+ 
+                                         <div className="content">
+                                             <div className="content__details">
+                                                 <div className='meal__cat'>Category: {result.strCategory}</div>
+                                                    {result && (
+                                                        <div className='fav__count'>
+                                                            <div className="p">FAVORITE OF: <span className='no__count'>{result.favoriteCount} User</span> </div>
+                                                        </div>
+                                                    )}
+                                                 <button 
+                                                     className="view__recipe"
+                                                     onClick={() => handleViewRecipe(result)}  
+                                                 >
+                                                     VIEW RECIPE
+                                                 </button>
+                                             </div>
+                                         </div>
+ 
+                                     </div>
+                                
+                            ))}
+                    </div>
+
+                </div>
+                )}
+
+                
+
             </Layout>
         </div>
     );

@@ -4,24 +4,27 @@
     left: 50%;
 }
 
+.rating__popup{
+        
+    .btn__submit_rate{
+        background-color: transparent;
+        cursor: pointer;
+        border: none;
+        outline: 2px solid #493628;
+        border-radius: 4px;
+    }
+
+    .btn__submit_rate:hover{
+        color: white;
+        background-color: #493628;
+    }
+}
+
 .meal__detail__container {
     padding: 20px;
     display: flex;
     flex-direction: column;
     height: 100vh;
-
-    .rating__data{
-        margin-bottom: 10px;
-        font-size: 1.4rem;
-        display: flex;
-        align-items: center;
-
-        svg{
-            font-size: 1.2rem;
-            margin: 0px 5px;
-            color: #ffbc0b;
-        }
-    }
 
     .meal__name {
         margin-bottom: 20px;
@@ -143,21 +146,17 @@
                         margin-bottom: 20px;
                     }
     
-                    .fav__btn {
-                        all: unset;
-                        display: flex;
-                        align-items: center;
-                        padding: 12px 30px;
-                        background-color: #493628;
-                        font-weight: bold;
+                    .btn__rate{
+                        background-color: #ffbc0b;
+                        border-radius: 6px;
+                        outline: 1px solid #493628;
+                        border: none;
                         cursor: pointer;
+                    }
+
+                    .btn__rate:hover{
+                        background-color: #e8af11;
                         color: white;
-                        border-radius: 8px;
-    
-                        svg {
-                            color: black;
-                            margin-right: 5px;
-                        }
                     }
     
                     .fav__btn:hover {

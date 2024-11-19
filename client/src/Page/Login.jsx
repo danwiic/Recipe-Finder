@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import axios from "axios";
 import { useUser } from "../Context/UserContext";
@@ -9,7 +9,7 @@ import bg from '/bg1.jpg';
 
 export default function Login() {
   const navigate = useNavigate();
-  const { setUser, setAccessToken } = useUser();
+  const { user, setUser, setAccessToken } = useUser();
 
   const [login, setLogin] = useState({
     username: "",
@@ -47,7 +47,7 @@ export default function Login() {
         localStorage.setItem("user", JSON.stringify(userData));
         localStorage.setItem("accessToken", token); 
 
-        navigate("/"); // Redirect to the home page
+        navigate("/home"); // Redirect to the home page
       } else {
         setError(res.status.Error || "Login failed, please check your credentials.");
       }
@@ -55,6 +55,10 @@ export default function Login() {
       setError("Invalid username or password");
     }
   };
+
+  useEffect(() => {
+    user && navigate('/home')
+  })
 
   return (
     <div className="login__container" style={{ backgroundImage: `url(${bg})` }}>

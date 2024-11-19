@@ -139,8 +139,8 @@ export default function MealDetail() {
 
     if (ingredientList.length > 0) {
       try {
-        const appId = 'f1d29244'
-        const appKey = '56070457df8b8e4f0a569b6563daf074'
+        const appId = '96466a93'
+        const appKey = 'f7daa8c77175ac99ff5927068b289e6e'
 
         const response = await axios.post(
           `https://api.edamam.com/api/nutrition-details?app_id=${appId}&app_key=${appKey}`,
@@ -360,7 +360,7 @@ const fetchUserRating = async (mealId) => {
                   initialValue={rating}
                   className="rate"
               />
-              <button onClick={handleSubmitRating}>Submit Rating</button>
+              <button className="btn__submit_rate" onClick={handleSubmitRating}>SUBMIT RATING</button>
           </div>
       </Popup>
     </Layout>
