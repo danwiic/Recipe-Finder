@@ -92,6 +92,10 @@ export default function Recipe() {
         }
     };
 
+    const goAdd = () => {
+        navigate('/home')
+    }
+
     return (
         <>
             <Layout>
@@ -144,7 +148,9 @@ export default function Recipe() {
                         ) : (
                             <>
                                 <p>You don't have any favorite meals yet!</p>
-                                <button>ADD <FaPlus /></button>
+                                <button
+                                    onClick={goAdd}
+                                >ADD <FaPlus /></button>
                             </>
                         )
                     )}

@@ -15,11 +15,9 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
   const hasAccess = user && allowedRoles.includes(user.role);
 
   useEffect(() => {
-    // If no user, show popup
     if (!user) {
       setOpen(true);
     } else if (!hasAccess) {
-      // If user exists but has no access, redirect
       navigate("/");
     }
   }, [user, hasAccess, navigate, location]);

@@ -38,7 +38,7 @@ export default function Signup() {
 
       // On successful signup, navigate to login page
       if (response.status === 201) {
-        navigate("/login");
+        navigate("/");
       }
 
     } catch (err) {

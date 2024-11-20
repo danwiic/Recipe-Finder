@@ -1,13 +1,19 @@
+import { Outlet } from "react-router";
 import Layout from "../Components/Layout";
+import "./Style/Dashboard.css"
+import Sidebar from "../Components/Sidebar";
+import Data from "./Dashboard/Data";
+Data
+Sidebar
 
-Layout
-
-export default function Dashboard(params) {
+export default function Dashboard() {
     return(
         <>
-        <Layout>
-            
-        </Layout>
+        <div className="dash__con">
+            <Layout>
+                <Outlet />
+            </Layout>
+        </div>
         </>
     )
 };

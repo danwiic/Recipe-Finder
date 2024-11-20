@@ -256,6 +256,7 @@ export default function Meals() {
             placeholder="Thumbnail URL"
             value={mealData.strMealThumb}
             onChange={handleInputChange}
+            required
           />
         </div>
         <div>
@@ -267,6 +268,7 @@ export default function Meals() {
             placeholder="Tags (comma-separated)"
             value={mealData.strTags}
             onChange={handleInputChange}
+            required
           />
         </div>
         <div>
@@ -278,6 +280,7 @@ export default function Meals() {
             placeholder="YouTube Link"
             value={mealData.strYoutube}
             onChange={handleInputChange}
+            required
           />
         </div>
 
@@ -326,7 +329,7 @@ export default function Meals() {
         <div className="btn_con">
           <button 
             type="submit" 
-            className="btn__add_meal">ADD MEAL
+            className="btn__add_meal">Submit for Review
           </button>
         </div>
       </form>

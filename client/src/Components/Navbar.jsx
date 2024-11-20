@@ -17,7 +17,7 @@ export default function Navbar({}) {
 
   const navBar = user && user.role === 'admin' ? [
     { path: '/home', name: "HOME" },
-    { path: '/dashboard', name:'DASHBOARD'},
+    { path: '/dashboard/overview', name:'DASHBOARD'},
     { path: '/favorites', name: "FAVORITES" },
     { path: '/meals', name: "MEALS" },
   ] : [
@@ -49,8 +49,6 @@ export default function Navbar({}) {
 
         setUser(null);
         setOpen(false)
-
-        // Redirect to login page
         navigate("/"); 
       }
     } catch (error) {
@@ -124,7 +122,7 @@ export default function Navbar({}) {
       <div className="mobile__nav">
         <ul className="mobile__links">
           <li>
-            <Link to={'/'}>HOME</Link>
+            <Link to={'/home'}>HOME</Link>
           </li>
           <li>
             <Link to={'/favorites'}>FAVORITES</Link>

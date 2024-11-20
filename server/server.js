@@ -23,37 +23,48 @@ app.listen(PORT, () => {
 app.post("/signup", (req, res) => {
   const { username, email, password, confirmPassword } = req.body;
 
+  // Validate password match
   if (password !== confirmPassword) {
-    return res.status(400).json({ message: "Password did not match" });
+    return res.status(400).json({ message: "Passwords do not match" });
   }
 
-  // Check if the username or email already exists
+  // Validate password length
+  if (password.length < 8) {
+    return res.status(400).json({ message: "Password must be at least 8 characters long" });
+  }
+
+  // Check if username or email already exists
   const checkQuery = `SELECT * FROM users WHERE username = ? OR email = ?`;
   db.query(checkQuery, [username, email], (err, results) => {
     if (err) {
-      return res.status(500).json({ message: "Database error" });
+      console.error("Database error:", err);
+      return res.status(500).json({ message: "Internal server error" });
     }
 
+    // If username or email already exists
     if (results.length > 0) {
-      if (results[0].username === username) {
-        return res.status(400).json({ message: "Username is already used" });
+      if (results.some(user => user.username === username)) {
+        return res.status(400).json({ message: "Username is already taken" });
       }
-      if (results[0].email === email) {
-        return res.status(400).json({ message: "Email is already used" });
+      if (results.some(user => user.email === email)) {
+        return res.status(400).json({ message: "Email is already in use" });
       }
     }
 
-    // Insert the new user into the database without password hashing
+    // Insert new user into the database
     const insertQuery = `INSERT INTO users (username, email, password) VALUES (?, ?, ?)`;
     db.query(insertQuery, [username, email, password], (err, result) => {
       if (err) {
+        console.error("Error inserting user:", err);
         return res.status(500).json({ message: "Error creating user" });
       }
 
+      // Success response
       res.status(201).json({ message: "User created successfully" });
     });
   });
 });
+
 
 const JWT_SECRET = 'super_secret_promise';
 app.post("/login", (req, res) => {
@@ -624,11 +635,10 @@ app.get('/top_rated', (req, res) => {
   });
 });
 
-
+// fetch meals added by a specific user with their average rating and rating count
 app.get('/meals/user/:user_id', (req, res) => {
   const { user_id } = req.params;
 
-  // Query to fetch meals added by a specific user with their average rating and rating count
   const query = `
     SELECT m.*, 
            AVG(r.rating) AS averageRating, 
@@ -652,5 +662,18 @@ app.get('/meals/user/:user_id', (req, res) => {
   });
 });
 
+// retrieve overall number of users
+app.get('/users', (req, res) => {
+  const query = `SELECT COUNT(username) AS userCount FROM users WHERE role='user'`;
 
+  db.query(query, (err, result) => {
+    if (err) {
+      console.error(err); // Log the error for debugging
+      return res.status(500).json({ error: "Database query failed" }); // Send an appropriate response
+    }
+
+    // Send the result as JSON
+    res.status(200).json({ userCount: result[0].userCount });
+  });
+});
 

@@ -1,0 +1,59 @@
+.side{
+    display: flex;
+    overflow: hidden;
+
+    .sidebar__layout{
+        padding: 20px;
+        background: whitesmoke;
+        height: 100VH;
+        width: 230px;
+        box-shadow: rgba(0, 0, 0, 0.15) 1.95px 1.95px 2.6px;
+        overflow: hidden;
+       
+        min-width: 230px;
+        
+        .nav__links{
+            display: flex;
+            justify-content: space-around;
+            width: 100%;
+            font-size: 1.4rem;
+            font-weight: bold;
+            flex-direction: column;
+            gap: 20px;
+            
+    
+            .nav__text{
+                width: 100%;
+            }
+    
+            .nav__list{
+                text-decoration: none;
+                color: #493628;
+                position: relative;
+            }
+    
+            .nav__list::before {
+                content: '';
+                position: absolute;
+                bottom: -4px; 
+                left: 0;
+                width: 0%;
+                height: 3px;
+                background-color: #957257;
+                border-radius: 2px;
+                transition: all .5s;
+              }
+    
+            .nav__list:hover::before,
+            .nav__list.active::before {
+                width: 70%; 
+            }
+    
+            .nav__list:hover,
+            .nav__list.active{
+                    color: #957257;
+            }
+    
+        }
+    }
+}

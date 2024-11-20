@@ -8,6 +8,9 @@ import { UserProvider } from "./Context/UserContext.jsx";
 import ProtectedRoute from "./Components/ProtectedRoute.jsx";
 import MealDetail from "./Page/RecipeDetail.jsx";
 import Dashboard from "./Page/Dashboard.jsx";
+import Data from './Page/Dashboard/Data.jsx'
+import PendingRecipe from './Page/Dashboard/PendingRecipe.jsx'
+import ManageUsers from './Page/Dashboard/ManageUsers.jsx'
 
 export default function App() {
   return (
@@ -35,7 +38,13 @@ export default function App() {
                   <Dashboard />
                 </ProtectedRoute>
               }
-            />
+            > 
+              <Route path="/dashboard/overview" element={<Data/>} />
+              <Route path="/dashboard/manage" element={<ManageUsers/>} />
+              <Route path="/dashboard/pending" element={<PendingRecipe/>} />
+            </Route>
+
+
             <Route
               path="/recipe/:id"
               element={

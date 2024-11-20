@@ -1,0 +1,58 @@
+.overview__con{
+    padding: 20px;
+    width: 100%;
+    overflow: scroll;
+    max-height: calc(100vh - 90px);
+
+    .cards__container{
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        width: 100%;
+        gap: 15px;
+
+        .card{
+            border-radius: 12px;
+            background-color: white;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            height: auto;
+            box-shadow: rgba(0, 0, 0, 0.16) 0px 3px 6px, rgba(0, 0, 0, 0.23) 0px 3px 6px;
+
+            .card__data{
+                font-size: 5rem;
+            }
+
+            .card__title{
+                font-weight: bold;
+                font-size: 1.5rem;
+            }
+        }
+        .line__chart{
+            border-radius: 12px;
+            background-color: white;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            height: auto;
+            box-shadow: rgba(0, 0, 0, 0.16) 0px 3px 6px, rgba(0, 0, 0, 0.23) 0px 3px 6px;
+            grid-column: 1 / span 2;
+            max-height: 400px;
+
+        }
+        .bar__chart{
+            border-radius: 12px;
+            background-color: white;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            height: auto;
+            box-shadow: rgba(0, 0, 0, 0.16) 0px 3px 6px, rgba(0, 0, 0, 0.23) 0px 3px 6px;
+            grid-column: 3 / span 2;
+            max-height: 400px;
+        }
+    }
+}

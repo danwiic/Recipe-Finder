@@ -290,7 +290,7 @@ console.log("results: 1 ", results);
 
                 {topMeal && (
                     <div className="top__meal">
-                        <h3>TOP 5 FAVORITE RECIPE</h3>
+                        <h3>TOP 5 POPULAR RECIPE</h3>
                     <div className='meals'>
                         {topMeal.map((result, i) => (
                                 <div className="meal__list" key={result.idMeal}>
