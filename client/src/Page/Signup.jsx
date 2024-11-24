@@ -16,6 +16,7 @@ export default function Signup() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const [visible, setVisible] = useState(false)
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -61,6 +62,7 @@ export default function Signup() {
               <form className="signup__form" onSubmit={handleSubmit}>
                 <label className="form__labels">Username</label>
                 <input
+                  className="input__field"
                   type="text"
                   placeholder="Username"
                   name="username"
@@ -71,6 +73,7 @@ export default function Signup() {
 
                 <label className="form__labels">Email</label>
                 <input
+                 className="input__field"
                   type="email"
                   placeholder="Email"
                   name="email"
@@ -81,7 +84,8 @@ export default function Signup() {
 
                 <label className="form__labels">Password</label>
                 <input
-                  type="password"
+                 className="input__field"
+                  type={visible? "text" : "password"}
                   placeholder="Create password"
                   name="password"
                   value={password}
@@ -91,13 +95,25 @@ export default function Signup() {
 
                 <label className="form__labels">Confirm Password</label>
                 <input
-                  type="password"
+                 className="input__field"
+                  type={visible? "text" : "password"}
                   placeholder="Confirm password"
                   name="confirmPassword"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   style={{ backgroundImage: `url(${passLogo})` }}
                 />
+
+            <div 
+              className="show__pass" 
+              onClick={() => setVisible(!visible)}
+              style={{display: "flex", alignItems: "center", gap: "5px"}}
+              >
+                <input type="checkbox" />
+                  <label htmlFor="show" style={{fontWeight: "700", color: "#050300"}}>
+                  Show password
+                  </label>
+              </div>
 
                 {error && 
                   <p 
@@ -111,7 +127,7 @@ export default function Signup() {
                   <button type="submit" disabled={loading}>
                     {loading ? 'Creating Account...' : 'Create account'}
                   </button>
-                  <p>Already have an account? <Link to="/login">Login</Link></p>
+                  <p>Already have an account? <Link to="/">Login</Link></p>
                 </div>
 
               </form>

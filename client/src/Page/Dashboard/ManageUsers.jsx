@@ -6,7 +6,7 @@ export default function ManageUsers() {
         <div>
             <Sidebar>
                 <div className="manage__con">
-                    ajsdjj2
+                    Manage users
                 </div>
             </Sidebar>
         </div>

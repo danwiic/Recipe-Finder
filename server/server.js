@@ -677,3 +677,86 @@ app.get('/users', (req, res) => {
   });
 });
 
+// Insert a new comment for a meal
+app.post('/meals/:mealId/comments', (req, res) => {
+  const mealId = req.params.mealId;
+  const { user_id, comment_text } = req.body;
+
+  // Validate input
+  if (!user_id || !comment_text) {
+      return res.status(400).json({ error: 'User ID and comment text are required.' });
+  }
+
+  // Trim and sanitize input
+  const sanitizedCommentText = comment_text.trim();
+
+  const query = `
+      INSERT INTO comments (meal_id, user_id, comment_text) 
+      VALUES (?, ?, ?)
+  `;
+
+  db.query(query, [mealId, user_id, sanitizedCommentText], (err, results) => {
+      if (err) {
+          console.error('[Database Error]:', err.message);
+
+          // Return detailed or generic error messages
+          const errorMessage = process.env.NODE_ENV === 'development'
+              ? err.message
+              : 'An error occurred while adding the comment.';
+          return res.status(500).json({ error: errorMessage });
+      }
+
+      // Send response with newly created comment data
+      res.status(201).json({
+          message: 'Comment added successfully.',
+          comment: {
+              id: results.insertId,
+              meal_id: parseInt(mealId, 10),
+              user_id: parseInt(user_id, 10),
+              comment_text: sanitizedCommentText,
+          },
+      });
+  });
+});
+
+// Retrieve all comments for a specific meal
+app.get('/meals/:mealId/comments', (req, res) => {
+  const mealId = req.params.mealId;
+
+  const query = `
+      SELECT c.comment_id, c.comment_text, c.created_at, u.username
+      FROM comments c
+      JOIN users u ON c.user_id = u.user_id
+      WHERE c.meal_id = ?
+      ORDER BY c.created_at DESC
+  `;
+  db.query(query, [mealId], (err, results) => {
+      if (err) {
+          console.error(err);
+          return res.status(500).json({ error: 'An error occurred while retrieving comments.' });
+      }
+      res.status(200).json(results);
+  });
+});
+
+// Delete certain comment
+app.delete('/meals/:mealId/comments/:commentId', (req, res) => {
+  const { mealId, commentId } = req.params;
+
+  const query = 'DELETE FROM comments WHERE meal_id = ? AND comment_id = ?';
+  db.query(query, [mealId, commentId], (err, results) => {
+    if (err) {
+      console.error(err);
+      return res.status(500).json({ error: 'An error occurred while deleting the comment.' });
+    }
+
+    if (results.affectedRows === 0) {
+      return res.status(404).json({ error: 'Comment not found.' });
+    }
+
+    res.status(200).json({ message: 'Comment deleted successfully.' });
+  });
+});
+
+
+

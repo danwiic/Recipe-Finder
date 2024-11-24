@@ -10,6 +10,16 @@ import { useUser } from "../Context/UserContext"
 import Layout from '../Components/Layout.jsx'
 import Popup from '../Components/Popup.jsx'
 import { Rating } from 'react-simple-star-rating';
+import { LiaCommentSolid } from "react-icons/lia";
+import { MdReport } from "react-icons/md";
+import { MdDeleteOutline } from "react-icons/md";
+import { IoIosRemoveCircle } from "react-icons/io";
+import { IoMdAdd } from "react-icons/io";
+import { TiDeleteOutline } from "react-icons/ti";
+
+
+
+
 Popup
 
 export default function MealDetail() {
@@ -26,12 +36,57 @@ export default function MealDetail() {
   })
   const [rating, setRating] = useState(0);  // Initialize rating with 0
   const [isOpen, setOpen] = useState(false); 
+  const [viewComment, setViewComment] = useState(false)
+  const [comments, setComments] = useState(null)
+  const [addComment, setAddComment] = useState('')
+  const [showDeletePromt, setShowDeletePromo] = useState(false)
+  const [selectedComment, setSelectedComment] = useState(null)
+
+
   const navigate = useNavigate()
   
   console.log(ratingData);
 
-  
-  
+  const deleteComment = async (commentId) => {
+    try{
+      const res = await axios.delete(`http://192.168.1.185:8800/meals/${id}/comments/${commentId}`)
+      if(res.status === 200){
+        fetchComments()
+        setShowDeletePromo(false)
+      }
+    }catch(err){
+      console.log(err);
+    }
+  }
+
+  const submitComment = async () => {
+    try{
+      const res = await axios.post(`http://192.168.1.185:8800/meals/${id}/comments`, {
+        comment_text: addComment,
+        user_id: user.id
+      })
+      if(res.status === 201){
+        setAddComment("")
+        fetchComments()
+      }
+
+
+    }catch(err){
+      console.log("Error submitting comment: ", err);
+      
+    }
+  }
+
+  const fetchComments = async () => {
+    try{
+      const res = await axios.get(`http://192.168.1.185:8800/meals/${id}/comments`)
+      console.log("comments:",  res);
+      setComments(res.data)
+    }catch(err){
+      console.log(err);
+    }
+  }
+
   
   useEffect(() => {
     const fetchMealDetails = async () => {
@@ -47,12 +102,10 @@ export default function MealDetail() {
         } else {
           // If not found in TheMealDB, check the custom database
           const customApiResponse = await axios.get(`http://192.168.1.185:8800/meal/${id}`);
-          console.log(customApiResponse);
           
           if (customApiResponse.data) {
             const customMealData = customApiResponse.data;
             setMeal(customMealData);
-            console.log("meal: ", customMealData);
             fetchNutrition(customMealData);
           } else {
             setError('Meal not found!');
@@ -68,7 +121,8 @@ export default function MealDetail() {
   
     fetchMealDetails();
     fetchRatingData();  // Call fetchRatingData to load ratings data
-  
+    fetchComments()
+    
   }, [id]);
   
 
@@ -76,18 +130,18 @@ export default function MealDetail() {
   useEffect(() => {
     const checkFavoriteStatus = async () => {
       try {
-        const response = await axios.get(`http://192.168.1.185:8800/favorites/${user.id}`)
-        const mealIds = response.data.meals.map(meal => meal.idMeal)
-        setIsFavorite(mealIds.includes(id))
+        const response = await axios.get(`http://192.168.1.185:8800/favorites/${user.id}`);
+        const mealIds = response.data.meals.map(meal => meal.idMeal);
+        setIsFavorite(mealIds.includes(id));
       } catch (error) {
-        console.error("Error checking favorite status:", error)
+        console.error("Error checking favorite status:", error);
       }
-    }
-
+    };
+  
     if (user?.id) {
-      checkFavoriteStatus()
+      checkFavoriteStatus();
     }
-  }, [id, user])
+  }, [id, user]);
 
   const fetchNutrition = async (meal) => {
     let ingredients = []
@@ -157,6 +211,7 @@ export default function MealDetail() {
       setError("No valid ingredients to fetch nutrition.")
     }
   }
+
   const fetchRatingData = async () => {
     try {
       const response = await axios.get(`http://192.168.1.185:8800/ratings/average/${id}`);
@@ -165,9 +220,10 @@ export default function MealDetail() {
       console.error("Error fetching rating data:", error);
     }
   }
+
   useEffect(() => {
     fetchRatingData()
-  }, [])
+  }, [id])
 
   
 
@@ -228,8 +284,6 @@ export default function MealDetail() {
     }
 }
 
-
-
   const handleRateMeal = async (meal) => {
     setMeal(meal); // Set the selected meal for rating
     setOpen(true); // Show the popup
@@ -239,18 +293,18 @@ export default function MealDetail() {
     setRating(userRating); // Set the user's rating in the state
   };
 
-console.log("selected meal: ", meal);
+  const fetchUserRating = async (mealId) => {
+    try {
+      const response = await axios.get(`http://192.168.1.185:8800/ratings/user/${user.id}/meal/${mealId}`);
+      return response.data.rating || 0;  // Default to 0 if no rating
+    } catch (error) {
+      console.error("Error fetching user rating:", error);
+      return 0; // Return 0 if error occurs
+    }
+  };
 
 
-const fetchUserRating = async (mealId) => {
-  try {
-    const response = await axios.get(`http://192.168.1.185:8800/ratings/user/${user.id}/meal/${mealId}`);
-    return response.data.rating || 0;  // Default to 0 if no rating
-  } catch (error) {
-    console.error("Error fetching user rating:", error);
-    return 0; // Return 0 if error occurs
-  }
-};
+console.log(comments);
 
 
 
@@ -267,26 +321,45 @@ const fetchUserRating = async (mealId) => {
           {meal.strMeal.toUpperCase()}
         </h2>
 
-     
-        
 
         <div className="meal__detail__layout">
           <div className="meal__video__container">
 
-          <div className="vid__con"
-          >
-            <div className="fav__action">
+          
+
+          <div className="vid__con">
+
+          <div className="fav__action">
               <span className='rating__data'>({ratingData.averageRating.toFixed(1)} <IoStar /> || {ratingData.ratingCount} Reviews)</span>
-                 {user && (
-                   isFavorite ? (
-                    <button className='fav__btn remove' onClick={handleRemoveFromFavorites}>REMOVE FROM FAVORITES</button>
-                  ) : (
-                    <button className='fav__btn' onClick={handleAddToFavorites}>ADD TO FAVORITES</button>
-                  )
-                 )}
+                <div className="buttons">
+                  <button 
+                    onClick={(e) => setViewComment(true)}
+                    className='btn__comment'
+                      ><LiaCommentSolid /> COMMENTS
+                  </button>
+
+                  {user && (
+                     <button 
+                     className='btn__rate' 
+                     onClick={() => handleRateMeal(meal)}
+                     > RATE THE MEAL
+                   </button>
+                   )}
+
+                  {user && (
+                    isFavorite ? (
+                      <button className='fav__btn remove' onClick={handleRemoveFromFavorites}><IoIosRemoveCircle />MOVE FROM FAVORITES</button>
+                    ) : (
+                      <button className='fav__btn' onClick={handleAddToFavorites}><IoMdAdd /> ADD TO FAVORITES</button>
+                    )
+                  )}
+                </div>
             </div>
 
-            <div className="con meal__video ">
+
+            
+
+            <div className="meal__video ">
               <ReactPlayer 
                 url={meal.strYoutube} 
                 width="100%"
@@ -294,31 +367,7 @@ const fetchUserRating = async (mealId) => {
               />
             </div>
 
-            {nutrition && (
-                <div className='meal__nutrition '>
-                  <h3>Nutrition Facts</h3>
-                  <div className="meal__con">
-                    <div>Calories: <span className='nutrition__details'>{nutrition.calories}cal</span></div>
-                    <div>Serving Size: <span className='nutrition__details'>{nutrition.yield} people</span></div>
-                    <div>Fat: <span className='nutrition__details'>{Math.round(nutrition.totalNutrients.FAT.quantity)}g</span></div>
-                    <div>Carbs: <span className='nutrition__details'>{Math.round(nutrition.totalNutrients.CHOCDF.quantity)}g</span></div>
-                    <div>Protein: <span className='nutrition__details'>{Math.round(nutrition.totalNutrients.PROCNT.quantity)}g</span></div>
-                  </div>
-                  
-                    
-                   {user && (
-                     <button 
-                     className='btn__rate' 
-                     onClick={() => handleRateMeal(meal)}
-                     >RATE THE MEAL
-                   </button>
-                   )}
-                </div>
-            )}
-
-
-
-          <div className='ingredients__container '>
+            <div className='ingredients__container '>
               <h3>Ingredients</h3>
               <ul>
                 {[...Array(20)].map((_, index) => {
@@ -337,23 +386,44 @@ const fetchUserRating = async (mealId) => {
               </ul>
             </div>
 
-           <div className="meal__description ">
-              <h3>Instructions</h3>
-              <ol>
-                {meal.strInstructions.split('. ').map((step, index) => (
-                  <li key={index}>{step.trim()}</li>
-                ))}
-              </ol>
-            </div>
+            {nutrition && (
+                <div className='meal__nutrition '>
+                  <h3>Nutrition Facts</h3>
+                  <div className="meal__con">
+                    <div>Calories: <span className='nutrition__details'>{nutrition.calories}cal</span></div>
+                    <div>Serving Size: <span className='nutrition__details'>{nutrition.yield}</span></div>
+                    <div>Fat: <span className='nutrition__details'>{Math.round(nutrition.totalNutrients.FAT.quantity)}g</span></div>
+                    <div>Carbs: <span className='nutrition__details'>{Math.round(nutrition.totalNutrients.CHOCDF.quantity)}g</span></div>
+                    <div>Protein: <span className='nutrition__details'>{Math.round(nutrition.totalNutrients.PROCNT.quantity)}g</span></div>
+                  </div>
+                  
+                </div>
+            )}
 
 
-            </div>
+          
+
+            <div className="meal__description ">
+                <h3>Instructions</h3>
+                <ol>
+                  {meal.strInstructions.split('. ').map((step, index) => (
+                    <li key={index}>{step.trim()}</li>
+                  ))}
+                </ol>
+              </div>
+
             
+
+
+            </div>
           </div>
         </div>
       </div>
+     
+
+        {/* RATING POPUP */}
         <Popup trigger={isOpen} setTrigger={setOpen}>
-        <h4>Rate this Recipe ( 1 to 5 star )</h4>
+         <h4>Rate this Recipe ( 1 to 5 star )</h4>
           <div className="rating__popup">
               <Rating
                   onClick={(rate) => setRating(rate)}
@@ -363,6 +433,71 @@ const fetchUserRating = async (mealId) => {
               <button className="btn__submit_rate" onClick={handleSubmitRating}>SUBMIT RATING</button>
           </div>
       </Popup>
+
+      {/* COMMENT POPUP */}
+      <Popup trigger={viewComment} setTrigger={setViewComment}>
+        <h4>COMMENTS</h4>
+        <div className="comment__layout">
+          {comments && comments.length > 0 ? (
+            <div className='comment__con'>
+          {  comments.map((comment, index) => (
+             
+             <div className="comment">
+               <span className='title'>By: {comment.username} 
+                  {user.role ==='admin' && (
+                    <MdDeleteOutline onClick={(e) => {
+                      setShowDeletePromo(prev => !prev)
+                      setSelectedComment(comment.comment_id)
+                    }
+                    } />
+                  )}
+               </span>
+               <div className='comments' key={index}>{comment.comment_text}<MdReport /></div>
+             </div>
+       
+       ))}
+            </div> 
+          ) : (
+            <div className="comments">No comments yet. Be the first to comment!</div>
+          )}
+          <form onSubmit={(e) => 
+              {e.preventDefault() 
+              submitComment()
+            }}>
+            <input 
+              type="text"
+              value={addComment}
+              onChange={(e) => setAddComment(e.target.value)}
+              placeholder='Write a comment...'
+               />
+            <button><LiaCommentSolid /></button>
+          </form>
+        </div>
+      </Popup>
+      
+
+
+
+      <Popup trigger={showDeletePromt} setTrigger={setShowDeletePromo}>
+
+          <div className="delete__comment__popup">
+             <TiDeleteOutline />
+             <h3>Are you sure?</h3>
+             <p>Do you really want to delete this comment?</p>
+
+             <div className="action">
+                <button 
+                  onClick={(e) => setShowDeletePromo(prev => !prev)}
+                  className='btn__cancel'
+                  >Cancel</button>
+                <button 
+                  onClick={(e) =>  deleteComment(selectedComment)}
+                  className='btn__delete'
+                  >Delete</button>
+             </div>
+          </div>
+      </Popup>
+
     </Layout>
     </>
   )

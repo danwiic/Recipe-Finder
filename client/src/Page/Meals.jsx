@@ -13,6 +13,7 @@ useUser
 Popup
 
 export default function Meals() {
+  const { user } = useUser()
   const [mealData, setMealData] = useState({
     strMeal: "",
     strCategory: "",
@@ -22,11 +23,12 @@ export default function Meals() {
     strTags: "",
     strYoutube: "",
     ingredients: [{ ingredient: "", measurement: "" }],
-    user_id: 1 // Replace with the actual user_id
+    user_id: user.id
   });
+
+
   const [message, setMessage] = useState("");
   const [open, setOpen] = useState(false)
-  const { user } = useUser()
   const [added, setAdded] = useState({})
 
   const handleInputChange = (e) => {

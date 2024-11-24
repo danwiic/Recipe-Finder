@@ -3,7 +3,7 @@
     overflow: hidden;
 
     .sidebar__layout{
-        padding: 20px;
+        padding: 15px;
         background: whitesmoke;
         height: 100VH;
         width: 230px;
@@ -19,11 +19,15 @@
             font-size: 1.4rem;
             font-weight: bold;
             flex-direction: column;
-            gap: 20px;
+            gap: 15px;
             
     
             .nav__text{
                 width: 100%;
+                display: flex;
+                gap: 5px;
+                align-items: center;
+                font-size: 1.3rem;
             }
     
             .nav__list{

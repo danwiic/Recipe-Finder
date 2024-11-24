@@ -62,19 +62,13 @@
         
         .meal__video__container {
             display: grid;
-            grid-template-columns: 900px;
+            grid-template-columns: 90vw;
             gap: 40px;
             width: 100%;
             margin-bottom: 30px;
             min-height: 350px;
             justify-content: center;
             align-items: center;
-
-            @media (width < 1100px) {
-                grid-template-columns: repeat(1, 1fr);
-                min-height: 350px;
-                height: 450px;
-            }
 
             
 
@@ -84,12 +78,61 @@
                 box-shadow: rgba(60, 64, 67, 0.3) 0px 1px 2px 0px, rgba(60, 64, 67, 0.15) 0px 2px 6px 2px;
                 border-radius: 12px;
                 display: grid;
-                grid-template-columns: repeat(1fr);
+                grid-template-columns: repeat(5, 1fr);
+                gap: 20px;
+
 
                 .fav__action{
                     margin-bottom: 10px;
                     display: flex;
                     justify-content: space-between;
+                    grid-column: 1 / span 5;
+
+                    .btn__rate{
+                        background-color: #ffbc0b;
+                        border-radius: 6px;
+                        outline: 1px solid gray;
+                        border: none;
+                        cursor: pointer;
+                        display: flex;
+                        align-items: center;
+                        gap: 5px;
+
+                        svg{
+                            font-size: 1.2rem;
+                        }
+                    }
+
+                    .btn__rate:hover{
+                        background-color: #cd9b14;
+                        color: white;
+                    }
+
+                    .buttons{
+                        display: flex;
+                        gap: 10px;
+
+                        .btn__comment{
+                            display: flex;
+                            align-items: center;
+                            gap: 5px;
+
+                            svg{
+                                font-size: 1rem;
+                            }
+                        }
+                    }
+
+                    .rating__data{
+                        font-weight: bold;
+                        font-size: 1.5rem;
+
+                        
+
+                        svg{
+                            color: #ffbc0b;
+                        }
+                    }
 
 
                     .fav__btn {
@@ -101,6 +144,7 @@
                         font-weight: bold;
                         cursor: pointer;
                         color: white;
+                        font-size: .9rem;
                         border-radius: 8px;
     
                         svg {
@@ -122,16 +166,14 @@
                         background-color: rgb(190, 27, 27);
                     }
                 }
+
                 .meal__video {
-                    box-shadow: rgba(60, 64, 67, 0.3) 0px 1px 2px 0px, rgba(60, 64, 67, 0.15) 0px 2px 6px 2px;
+                    grid-column: 1 / span 3;
                 }
 
                 .meal__nutrition {
-                    margin: 20px 0;
                     padding: 10px;
                     
-                 
-    
                     div {
                         font-size: 1.1rem;
                         margin-left: 10px;
@@ -146,18 +188,7 @@
                         margin-bottom: 20px;
                     }
     
-                    .btn__rate{
-                        background-color: #ffbc0b;
-                        border-radius: 6px;
-                        outline: 1px solid #493628;
-                        border: none;
-                        cursor: pointer;
-                    }
-
-                    .btn__rate:hover{
-                        background-color: #e8af11;
-                        color: white;
-                    }
+                   
     
                     .fav__btn:hover {
                         background-color: #32251c;
@@ -176,6 +207,7 @@
                 .meal__description {
                     padding: 10px;
                     width: 100%;
+                    grid-column: 1 / span 5;
     
                     h3 {
                         margin: 20px 0 10px 0;
@@ -218,5 +250,148 @@
 @media (width <= 1100px) {
     .con:nth-child(2) {
         width: 100%;
+    }
+}
+
+.comment__layout {
+    min-width: 500px;
+    min-height: 350px;
+    max-height: 500px;
+    height: 300px;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+  
+    .comment__con {
+      padding: 5px;
+      border-radius: 8px;
+      flex: 1; /* Takes up available space */
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      justify-content: flex-start; /* Ensures empty comments don't push the input box up */
+      overflow-y: auto; /* Enables scrolling for comments */
+  
+      .comment {
+        padding: 5px;
+        border-radius: 6px;
+        background: rgb(241, 240, 240);
+        box-shadow: rgba(60, 64, 67, 0.3) 0px 1px 2px 0px, rgba(60, 64, 67, 0.15) 0px 1px 3px 1px;
+  
+        .title {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+  
+          svg {
+            font-size: 1.5rem;
+            color: red;
+            cursor: pointer;
+          }
+        }
+      }
+    }
+  
+    .comments {
+      margin: 10px 0 10px 0;
+      margin-left: 25px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+  
+      svg {
+        font-size: 1.5rem;
+        color: red;
+        cursor: pointer;
+      }
+    }
+  
+    form {
+      display: flex;
+      flex-direction: row;
+      margin-top: auto; /* Pushes the form to the bottom */
+      width: 100%;
+      background: white; /* Ensures it stands out from the background */
+      border-top: 1px solid #ddd;
+  
+      input {
+        width: 100%;
+        outline: none;
+        border-radius: 10px 0 0 10px;
+        border: 1px solid #32251c;
+        padding: 10px 10px 10px 15px;
+      }
+  
+      button {
+        outline: none;
+        border: 1px solid #32251c;
+        border-left: none;
+  
+        svg {
+          font-size: 1.2rem;
+        }
+      }
+    }
+  }
+  
+/* DELETE CONFIRMATION POPUP */
+.delete__comment__popup{
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+
+    svg{
+        font-size: 6rem;
+        color: rgb(241, 63, 63);
+    }
+
+    .action{
+        margin-top: 20px;
+        display: inherit;
+        gap: 30px;
+        width: 100%;
+        justify-content: center;
+
+        .btn__cancel{
+            padding: 14px 30px;
+            color: white;
+            background-color: grey;
+            outline: none;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+        .btn__cancel:hover{
+            background-color: rgb(106, 105, 105);
+        }
+
+        .btn__delete{
+            background-color:  rgb(241, 63, 63);
+            padding: 14px 30px;
+            color: white;
+            outline: none;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+        .btn__delete:hover{
+            background-color:  rgb(203, 55, 55);
+        }
+
+        button{
+            padding: 10px 16px;
+        }
+    }
+
+    p{
+        margin: 20px 0px;
+        opacity: .9;
+    }
+
+    h3{
+        font-weight: 600;
+        margin-top: 20px;
     }
 }

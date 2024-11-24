@@ -6,7 +6,7 @@ export default function PendingRecipe() {
         <div>
             <Sidebar>
                 <div className="pending__con">
-                    ajsdjj3
+                    Pending
                 </div>
             </Sidebar>
         </div>

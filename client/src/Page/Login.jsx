@@ -7,6 +7,8 @@ import userLogo from '/user.png';
 import passLogo from '/password.png';
 import bg from '/bg1.jpg';
 
+
+
 export default function Login() {
   const navigate = useNavigate();
   const { user, setUser, setAccessToken } = useUser();
@@ -16,6 +18,7 @@ export default function Login() {
     password: ""
   });
   const [error, setError] = useState("");
+  const [visible, setVisible] = useState(false)
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -79,16 +82,28 @@ export default function Login() {
             />
 
             <label className="form__labels">Password</label>
-            <input 
-              className="input__field"
-              style={{ backgroundImage: `url(${passLogo})` }} 
-              type="password" 
-              placeholder="Password" 
-              name="password" 
-              value={login.password}
-              onChange={handleInputChange}
-              required
-            />
+              <input 
+                className="input__field"
+                style={{ backgroundImage: `url(${passLogo})` }} 
+                type={visible ? "text": "password"} 
+                placeholder="Password" 
+                name="password" 
+                value={login.password}
+                onChange={handleInputChange}
+                required
+              />
+
+
+            <div 
+              className="show__pass" 
+              onClick={() => setVisible(!visible)}
+              style={{display: "flex", alignItems: "center", gap: "5px"}}
+              >
+                <input type="checkbox" />
+                  <label htmlFor="show" style={{fontWeight: "700", color: "#050300"}}>
+                  Show password
+                  </label>
+              </div>
 
             <div className="action">
               <Link to="/forgot-password">Forgot Password?</Link>
