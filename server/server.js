@@ -65,7 +65,6 @@ app.post("/signup", (req, res) => {
   });
 });
 
-
 const JWT_SECRET = 'super_secret_promise';
 app.post("/login", (req, res) => {
   const { username, password } = req.body;
@@ -148,6 +147,27 @@ app.post('/meals', (req, res) => {
       }
 
       res.status(201).json({ message: 'Meal successfully added', mealId: result.insertId });
+  });
+});
+
+// Delete meal
+app.delete('/meals/:mealId', (req, res) => {
+  const mealId = req.params.mealId;
+
+  // Query to delete the meal based on the mealId
+  const query = `DELETE FROM meals WHERE idMeal = ?`;
+
+  db.query(query, [mealId], (err, result) => {
+    if (err) {
+      console.error(err);
+      return res.status(500).json({ message: 'Error deleting the meal', error: err });
+    }
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ message: 'Meal not found' });
+    }
+
+    res.status(200).json({ message: 'Meal successfully deleted' });
   });
 });
 
@@ -236,7 +256,6 @@ app.get('/meal', async (req, res) => {
   });
 });
 
-
 // search meal by idMeal
 app.get('/meal/:id', (req, res) => {
   const mealId = req.params.id;
@@ -299,7 +318,6 @@ app.get('/meal/:id', (req, res) => {
     res.json(response);
   });
 });
-
 
 // Add meal to favorites
 app.post('/favorites/add', async (req, res) => {
@@ -435,7 +453,6 @@ app.get('/favorites/:user_id', async (req, res) => {
   });
 });
 
-
 // Remove meal from favorites
 app.post('/favorites/remove', (req, res) => {
   const { idMeal, user_id } = req.body;
@@ -461,7 +478,6 @@ app.post('/favorites/remove', (req, res) => {
     });
   });
 });
-
 
 // Get the number of users who added a specific meal to their favorites
 
@@ -508,7 +524,6 @@ app.post('/rate', (req, res) => {
   });
 });
 
-
 // RATING PER MEAL
 app.get('/ratings/average/:meal_id', (req, res) => {
   const { meal_id } = req.params;
@@ -528,7 +543,6 @@ app.get('/ratings/average/:meal_id', (req, res) => {
     res.status(200).json({ averageRating, ratingCount });
   });
 });
-
 
 // COUNT TOTAL REVIEW A MEAL HAS
 app.get('/meal/:idMeal/ratings/count', (req, res) => {

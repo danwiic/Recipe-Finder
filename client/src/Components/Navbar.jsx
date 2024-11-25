@@ -103,12 +103,12 @@ export default function Navbar({}) {
         {open && (
           <Popup trigger={open}>
             <div className="confirmation__container">
-              <h3><FaRegQuestionCircle />Logout Confirmation</h3>
+              <h3>Logout Confirmation</h3>
               <p>Are you sure you want to logout?</p>
 
               <div className="confirmation">
-                <button className='btn__confirm' onClick={toLogout}>CONFIRM</button>
                 <button className='btn__cancel' onClick={() => setOpen(false)}>CANCEL</button>
+                <button className='btn__confirm' onClick={toLogout}>CONFIRM</button>
               </div>
             </div>
           </Popup>

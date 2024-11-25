@@ -7,10 +7,7 @@ import { useUser } from "../Context/UserContext";
 import { FaTrash } from "react-icons/fa";
 import { Rating } from 'react-simple-star-rating';
 import { useNavigate } from "react-router";
-useNavigate
 
-useUser
-Popup
 
 export default function Meals() {
   const { user } = useUser()
@@ -93,6 +90,7 @@ export default function Meals() {
         ingredients: [{ ingredient: "", measurement: "" }],
         user_id: user.id
       });
+      fetchAddedMeal()
     } catch (error) {
       setMessage("Failed to add meal.");
     }
@@ -329,10 +327,23 @@ export default function Meals() {
         
 
         <div className="btn_con">
-          <button 
-            type="submit" 
-            className="btn__add_meal">Submit for Review
+          {user && user.role === "admin" ? (
+            <>
+            <button 
+              type="submit" 
+              className="btn__add_meal"
+              >ADD
+            </button>
+            </>
+          ) : (
+            <>
+            <button 
+              type="submit" 
+              className="btn__add_meal"
+              >Submit for Review
           </button>
+            </>
+          )}
         </div>
       </form>
     </div>

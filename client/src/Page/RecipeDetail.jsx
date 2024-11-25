@@ -16,8 +16,7 @@ import { MdDeleteOutline } from "react-icons/md";
 import { IoIosRemoveCircle } from "react-icons/io";
 import { IoMdAdd } from "react-icons/io";
 import { TiDeleteOutline } from "react-icons/ti";
-
-
+import { MdDeleteForever } from "react-icons/md";
 
 
 Popup
@@ -41,11 +40,22 @@ export default function MealDetail() {
   const [addComment, setAddComment] = useState('')
   const [showDeletePromt, setShowDeletePromo] = useState(false)
   const [selectedComment, setSelectedComment] = useState(null)
-
-
+  const [deleteMeal, setDeleteMeal] = useState(false)
   const navigate = useNavigate()
   
   console.log(ratingData);
+
+  const deleteSelectedMeal = async () => {
+    try{
+      const res = await axios.delete(`http://192.168.1.185:8800/meals/${id}`)
+
+      if(res.status === 200){
+        navigate("/home")
+      }
+    }catch(err){
+      console.log(err);
+    }
+  }
 
   const deleteComment = async (commentId) => {
     try{
@@ -102,6 +112,7 @@ export default function MealDetail() {
         } else {
           // If not found in TheMealDB, check the custom database
           const customApiResponse = await axios.get(`http://192.168.1.185:8800/meal/${id}`);
+          console.log(customApiResponse);
           
           if (customApiResponse.data) {
             const customMealData = customApiResponse.data;
@@ -268,6 +279,18 @@ export default function MealDetail() {
   if (error) return <div>{error}</div>
   if (!meal) return <div>Meal not found!</div>
 
+
+  const fetchUserRating = async (mealId) => {
+    try {
+      const response = await axios.get(`http://192.168.1.185:8800/ratings/user/${user.id}/meal/${mealId}`);
+      return response.data.rating || 0;  // Default to 0 if no rating
+    } catch (error) {
+      console.error("Error fetching user rating:", error);
+      return 0; // Return 0 if error occurs
+    }
+  };
+
+
   const handleSubmitRating = async () => {
     try {
         await axios.post('http://192.168.1.185:8800/rate', {
@@ -275,7 +298,7 @@ export default function MealDetail() {
             meal_id: meal.idMeal,
             rating: rating,
         });
-        
+        fetchRatingData()
         setOpen(false)
     } catch (error) {
         console.error(error);
@@ -293,15 +316,7 @@ export default function MealDetail() {
     setRating(userRating); // Set the user's rating in the state
   };
 
-  const fetchUserRating = async (mealId) => {
-    try {
-      const response = await axios.get(`http://192.168.1.185:8800/ratings/user/${user.id}/meal/${mealId}`);
-      return response.data.rating || 0;  // Default to 0 if no rating
-    } catch (error) {
-      console.error("Error fetching user rating:", error);
-      return 0; // Return 0 if error occurs
-    }
-  };
+ 
 
 
 console.log(comments);
@@ -332,6 +347,16 @@ console.log(comments);
           <div className="fav__action">
               <span className='rating__data'>({ratingData.averageRating.toFixed(1)} <IoStar /> || {ratingData.ratingCount} Reviews)</span>
                 <div className="buttons">
+
+                  {user && user.role === 'admin' &&(
+                    <button
+                      className='btn__delete'
+                      onClick={(e) => {setDeleteMeal(true)}}
+                    >
+                      <MdDeleteForever />DELETE
+                    </button>
+                  )}
+
                   <button 
                     onClick={(e) => setViewComment(true)}
                     className='btn__comment'
@@ -348,7 +373,7 @@ console.log(comments);
 
                   {user && (
                     isFavorite ? (
-                      <button className='fav__btn remove' onClick={handleRemoveFromFavorites}><IoIosRemoveCircle />MOVE FROM FAVORITES</button>
+                      <button className='fav__btn remove' onClick={handleRemoveFromFavorites}><IoIosRemoveCircle />REMOVE FROM FAVORITES</button>
                     ) : (
                       <button className='fav__btn' onClick={handleAddToFavorites}><IoMdAdd /> ADD TO FAVORITES</button>
                     )
@@ -477,9 +502,8 @@ console.log(comments);
       
 
 
-
+            {/* CONFIRMATION FOR DELETING COMMENT */}
       <Popup trigger={showDeletePromt} setTrigger={setShowDeletePromo}>
-
           <div className="delete__comment__popup">
              <TiDeleteOutline />
              <h3>Are you sure?</h3>
@@ -492,6 +516,26 @@ console.log(comments);
                   >Cancel</button>
                 <button 
                   onClick={(e) =>  deleteComment(selectedComment)}
+                  className='btn__delete'
+                  >Delete</button>
+             </div>
+          </div>
+      </Popup>
+
+            {/* POPUP CONFIRMATION FOR DELETING A MEAL */}
+      <Popup trigger={deleteMeal} setTrigger={setDeleteMeal}>
+          <div className="delete__comment__popup">
+             <TiDeleteOutline />
+             <h3>Are you sure?</h3>
+             <p>Do you really want to delete this meal?</p>
+
+             <div className="action">
+                <button 
+                  onClick={(e) => setDeleteMeal(prev => !prev)}
+                  className='btn__cancel'
+                  >Cancel</button>
+                <button 
+                  onClick={(e) =>  deleteSelectedMeal(id)}
                   className='btn__delete'
                   >Delete</button>
              </div>
