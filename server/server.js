@@ -365,15 +365,16 @@ app.get('/meal/:id', async (req, res) => {
 app.post('/favorites/add', async (req, res) => {
   const { idMeal, user_id } = req.body;
 
-  // Check if the meal already exists in the test table
-  db.query('SELECT * FROM test WHERE idMeal = ?', [idMeal], async (err, results) => {
+  // First, check if the meal already exists in the 'meals' table
+  db.query('SELECT * FROM meals WHERE idMeal = ?', [idMeal], async (err, results) => {
     if (err) {
       return res.status(500).json({ message: "Database error", error: err });
     }
 
+    // If the meal does not exist in the 'meals' table, insert it
     if (results.length === 0) {
-      // Meal does not exist, fetch meal details from TheMealDB API
       try {
+        // Fetch meal details from TheMealDB API
         const response = await axios.get(`https://www.themealdb.com/api/json/v1/1/lookup.php?i=${idMeal}`);
         const mealDetails = response.data.meals[0];
 
@@ -391,7 +392,6 @@ app.post('/favorites/add', async (req, res) => {
 
           // Check if ingredient and measurement are valid and non-empty
           if (ingredient && ingredient.trim()) {
-            // Combine measurement and ingredient and push to the array
             const ingredientWithMeasurement = `${measurement ? measurement.trim() : '1 unit'} ${ingredient.trim()}`;
             ingredients.push(ingredientWithMeasurement);
           }
@@ -403,10 +403,7 @@ app.post('/favorites/add', async (req, res) => {
         // Format the ingredients as a JSON object
         const ingredientsJson = ingredients.length > 0 ? JSON.stringify(ingredients) : null;
 
-        // Log the formatted data before insertion
-        console.log("Formatted Ingredients JSON:", ingredientsJson);
-
-        // Insert meal into the test table
+        // Insert meal into the 'meals' table
         const query = `INSERT INTO meals (idMeal, strMeal, strCategory, strArea, strInstructions, strMealThumb, strTags, strYoutube, ingredients, user_id)
                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
 
@@ -427,22 +424,20 @@ app.post('/favorites/add', async (req, res) => {
             return res.status(500).json({ message: 'Error inserting meal data', error: err });
           }
 
-          // After the meal is added to the test table, now add it to favorites
-          db.query('INSERT INTO favorites (user_id, idMeal) VALUES (?, ?)', [user_id, idMeal], (err, result) => {
-            if (err) {
-              console.error("Error adding to favorites:", err);
-              return res.status(500).json({ message: 'Error adding to favorites', error: err });
-            }
-
-            res.status(201).json({ message: 'Meal added to favorites' });
-          });
+          // After the meal is added to the 'meals' table, add it to the 'favorites' table
+          addToFavorites();
         });
       } catch (error) {
         console.error("Error fetching meal details from TheMealDB:", error);
         return res.status(500).json({ message: "Error fetching meal details from TheMealDB", error: error });
       }
     } else {
-      // If the meal already exists in the test table, just add to favorites
+      // If the meal already exists in the 'meals' table, skip insertion and directly add to favorites
+      addToFavorites();
+    }
+
+    // Helper function to add meal to favorites
+    function addToFavorites() {
       db.query('INSERT INTO favorites (user_id, idMeal) VALUES (?, ?)', [user_id, idMeal], (err, result) => {
         if (err) {
           console.error("Error adding to favorites:", err);
@@ -454,6 +449,7 @@ app.post('/favorites/add', async (req, res) => {
     }
   });
 });
+
 
 // Fetch the meals that are added to favorites by the user
 app.get('/favorites/:user_id', async (req, res) => {
@@ -515,6 +511,30 @@ app.post('/favorites/remove', (req, res) => {
     });
   });
 });
+
+// checks if the meal is already added in the fav
+app.get('/favorites/check/:userId/:mealId', (req, res) => {
+  const { userId, mealId } = req.params;
+
+  const query = `
+      SELECT 1 
+      FROM favorites 
+      WHERE user_id = ? AND idMeal = ?
+      LIMIT 1
+  `;
+
+  db.query(query, [userId, mealId], (err, result) => {
+      if (err) {
+          console.error('Error checking favorite status:', err);
+          return res.status(500).json({ error: 'Internal server error' });
+      }
+
+      // If a result exists, return true; otherwise, return false
+      const isFavorite = result.length > 0;
+      res.json({ isFavorite });
+  });
+});
+
 
 // Get the number of users who added a specific meal to their favorites
 
@@ -827,7 +847,6 @@ app.get('/total/meals', (req, res) => {
   });
 });
 
-
 // Fetch all pending recipes
 app.get('/pending', (req, res) => {
   const query = 'SELECT * FROM pending_recipes WHERE status = "pending"';
@@ -859,9 +878,8 @@ app.get('/pending/recipes/total', (req, res) => {
   });
 });
 
-
 // Approve and move recipe to meals table
-app.post('/approve/recipe/:id', (req, res) => {
+app.post('/pending/approve/:id', (req, res) => {
   const recipeId = req.params.id;
 
   // Query to fetch the recipe from pending_recipes
@@ -914,14 +932,14 @@ app.post('/approve/recipe/:id', (req, res) => {
           return res.status(500).json({ error: 'Failed to remove recipe from pending list.' });
         }
 
-        res.json({ message: 'Recipe approved and moved to meals table.' });
+        res.status(201).json({ message: 'Recipe approved and moved to meals table.' });
       });
     });
   });
 });
 
 // Reject a recipe by deleting it
-app.delete('/reject/recipe/:id', (req, res) => {
+app.delete('/pending/reject/:id', (req, res) => {
   const recipeId = req.params.id;
 
   // Query to delete the recipe from pending_recipes
@@ -937,7 +955,7 @@ app.delete('/reject/recipe/:id', (req, res) => {
       return res.status(404).json({ error: 'Recipe not found.' });
     }
 
-    res.json({ message: 'Recipe rejected and removed from pending list.' });
+    res.status(201).json({ message: 'Recipe rejected and removed from pending list.' });
   });
 });
 

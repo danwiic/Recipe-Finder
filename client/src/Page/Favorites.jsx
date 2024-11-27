@@ -7,24 +7,14 @@ import Loader from "../Components/Loader";
 import { FaPlus } from "react-icons/fa";
 import { useNavigate } from "react-router";
 import { Rating } from 'react-simple-star-rating';
-import Popup from "../Components/Popup.jsx";  // Import the Popup component
+import { FaHeart } from "react-icons/fa";
 
 export default function Recipe() {
     const [favorites, setFavorites] = useState([]);
     const [loading, setLoading] = useState(false);
     const { user } = useUser();
-    const [rating, setRating] = useState(0);
-    const [isPopupOpen, setIsPopupOpen] = useState(false); // To control the popup visibility
-    const [selectedMeal, setSelectedMeal] = useState(null); // To store selected meal for rating
     const navigate = useNavigate();
-
-    useEffect(() => {
-        fetchFavorite();
-    }, []);
-
-    console.log("user", user);
     
-
     const fetchFavorite = async () => {
         try {
             setLoading(true);
@@ -36,7 +26,7 @@ export default function Recipe() {
                     return { ...meal, averageRating: avgRating };
                 })
             );
-            setFavorites(mealsWithRatings); // Set the meals with their respective average ratings
+            setFavorites(mealsWithRatings);
         } catch (error) {
             console.error(error);
         } finally {
@@ -67,34 +57,35 @@ export default function Recipe() {
     const handleViewRecipe = (recipe) => {
         navigate(`/recipe/${recipe.idMeal}`);
     };
-
-    const handleRateMeal = async (meal) => {
-        setSelectedMeal(meal); // Set the selected meal for rating
-        setIsPopupOpen(true); // Show the popup
-
-        // Fetch the user's rating if available for this meal
-        const userRating = await fetchUserRating(meal.idMeal);
-        setRating(userRating); // Set the user's rating in the state
-    };
-
-    const handleSubmitRating = async () => {
+    
+    const handleRemoveFromFavorites = async (idMeal) => {
+        // Optimistically update the UI
+        const updatedFavorites = favorites.filter((meal) => meal.idMeal !== idMeal);
+        setFavorites(updatedFavorites);
+    
         try {
-            await axios.post('http://192.168.1.185:8800/rate', {
+            const res = await axios.post('http://192.168.1.185:8800/favorites/remove', {
                 user_id: user.id,
-                meal_id: selectedMeal.idMeal,
-                rating: rating,
+                idMeal: idMeal,
             });
-
-            setIsPopupOpen(false); // Close the popup after submitting the rating
-            fetchFavorite(); // Refresh the favorite meals list to reflect any changes
+    
+            if (res.status !== 200) {
+                throw new Error("Failed to remove favorite");
+            }
         } catch (error) {
-            console.error(error);
+            console.error("Error removing from favorites:", error);
+            // Rollback UI update in case of failure
+            setFavorites(updatedFavorites);
         }
     };
 
     const goAdd = () => {
         navigate('/home')
     }
+
+    useEffect(() => {
+        fetchFavorite();
+    }, [])
 
     return (
         <>
@@ -126,11 +117,11 @@ export default function Recipe() {
                                                         />
                                                     </span> 
                                                 
-                                                    <button 
-                                                        className="btn__rate" 
-                                                        onClick={() => handleRateMeal(meal)}
-                                                        >RATE
-                                                    </button>
+                                                    <div className="fav__icon">
+                                                        <FaHeart 
+                                                            onClick={() => handleRemoveFromFavorites(meal.idMeal)}
+                                                        />
+                                                    </div>
                                                 </div>
 
                                                 <div className="action">
@@ -155,18 +146,6 @@ export default function Recipe() {
                         )
                     )}
                 </div>
-
-                <Popup trigger={isPopupOpen} setTrigger={setIsPopupOpen}>
-                    <h4>Rate this Recipe ( 1 to 5 star )</h4>
-                    <div className="rating__popup">
-                        <Rating
-                            onClick={(rate) => setRating(rate)}
-                            initialValue={rating}
-                            className="rate"
-                        />
-                        <button className="btn__submit_rate" onClick={handleSubmitRating}>Submit Rating</button>
-                    </div>
-                </Popup>
             </Layout>
         </>
     );

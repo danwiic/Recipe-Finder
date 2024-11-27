@@ -87,7 +87,7 @@ export default function Data() {
                         <div className="card">
                             <div className="card__data"> 0</div>
                             <div className="card__title">
-                                TOTAL USERS
+                                TOTAL CATEGORY
                             </div>
                         </div>
 

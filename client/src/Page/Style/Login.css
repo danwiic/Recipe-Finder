@@ -110,7 +110,10 @@
             input[type=checkbox]{
                 
             }
-           
+           .show__pass{
+            opacity: .8;
+            color: rgba(0, 0, 0, 0.765);
+           }
          }
        }
      }

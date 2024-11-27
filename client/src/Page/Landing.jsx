@@ -7,7 +7,12 @@ import searchIcon from '/search.png';
 import { useNavigate } from 'react-router-dom';
 import { Rating } from 'react-simple-star-rating';
 import { useUser } from '../Context/UserContext';
-useUser
+import { FaHeart } from "react-icons/fa";
+import { FaRegHeart } from "react-icons/fa";
+
+{/* <FaRegHeart />
+<FaHeart />
+useUser */}
 
 export default function Landing() {
     const [search, setSearch] = useState({ search: "" });
@@ -18,11 +23,6 @@ export default function Landing() {
     const [topMeal, setTopMeal] = useState([])
     const {user} = useUser()
     const [ratedMeal, setRatedMeal] = useState({})
-
-    useEffect(() => {
-      fetchTopMeal()
-      fetchTopRatedMeal()
-    }, []);
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -56,6 +56,7 @@ export default function Landing() {
     };
 
     const fetchTopMeal = async () => {
+       
         try{
             setLoading(true)
             const res = await axios.get("http://192.168.1.185:8800/top_meals")
@@ -82,41 +83,40 @@ export default function Landing() {
         }
     };
 
-
-console.log("lolo: ", ratedMeal);
-
-
     const handleSubmit = async (e) => {
         e.preventDefault();
-        
+
         if (!search.search.trim()) return;
         setLoading(true);
         setError(null);
         setResults([]);
-    
+
         try {
             const mealDbResponse = await axios.get(`https://www.themealdb.com/api/json/v1/1/search.php?s=${search.search}`);
             const mealDbResults = mealDbResponse.data.meals ? mealDbResponse.data.meals.map(formatMealData) : [];
-    
+
             const customApiResponse = await axios.get(`http://192.168.1.185:8800/meal?search=${search.search}`);
             const customApiResults = customApiResponse.data.meals ? customApiResponse.data.meals.map(formatMealData) : [];
-    
-            const combinedResults = [...mealDbResults, ...customApiResults];
-            
 
-            const mealsWithRatings = await Promise.all(
+            const combinedResults = [...mealDbResults, ...customApiResults];
+
+            const mealsWithDetails = await Promise.all(
                 combinedResults.map(async (meal) => {
+                    // Fetch average rating
                     const avgRating = await fetchAverageRating(meal.idMeal);
-                    return { ...meal, averageRating: avgRating };
+
+                    // Fetch favorite status
+                    const favoriteResponse = await axios.get(
+                        `http://192.168.1.185:8800/favorites/check/${user.id}/${meal.idMeal}`
+                    );
+                    const isFavorite = favoriteResponse.data.isFavorite;
+
+                    return { ...meal, averageRating: avgRating, isFavorite };
                 })
             );
 
-            setResults(mealsWithRatings)
-            
-            
-            
-            if (mealsWithRatings.length > 0) {
-                setResults(mealsWithRatings);
+            if (mealsWithDetails.length > 0) {
+                setResults(mealsWithDetails);
             } else {
                 setError("No meals found for your search.");
             }
@@ -141,7 +141,49 @@ console.log("lolo: ", ratedMeal);
             return 0;
         }
     };
+
+    const handleAddToFavorites = async (idMeal) => {
+        try {
+            await axios.post('http://192.168.1.185:8800/favorites/add', {
+                user_id: user.id,
+                idMeal: idMeal,
+            });
     
+            // Update the state to reflect the change
+            setResults((prevResults) =>
+                prevResults.map((meal) =>
+                    meal.idMeal === idMeal ? { ...meal, isFavorite: true } : meal
+                )
+            );
+            fetchTopMeal()
+        } catch (error) {
+            console.error("Error adding to favorites:", error);
+        }
+    };
+    
+    const handleRemoveFromFavorites = async (idMeal) => {
+        try {
+            await axios.post('http://192.168.1.185:8800/favorites/remove', {
+                user_id: user.id,
+                idMeal: idMeal,
+            });
+    
+            // Update the state to reflect the change
+            setResults((prevResults) =>
+                prevResults.map((meal) =>
+                    meal.idMeal === idMeal ? { ...meal, isFavorite: false } : meal
+                )
+            );
+            fetchTopMeal()
+        } catch (error) {
+            console.error("Error removing from favorites:", error);
+        }
+    };
+    
+      useEffect(() => {
+        fetchTopMeal()
+        fetchTopRatedMeal()
+      }, []);
 console.log("results: 1 ", results);
 
     return (
@@ -194,27 +236,47 @@ console.log("results: 1 ", results);
                                         <div className="content">
                                             <div className="content__details">
                                                 <div className='meal__cat'>Category: {result.strCategory}</div>
-                                                   {result.averageRating ? (
-                                                     <span className='meal__rating'>
-                                                     {result.averageRating.averageRating.toFixed(1)}
-                                                         <Rating
-                                                         readonly
-                                                         initialValue={result.averageRating.averageRating}  
-                                                         className="rate"
-                                                     />
-                                                     ({result.averageRating.ratingCount})
-                                                 </span> 
-                                                   ) : (
-                                                    <span className='meal__rating'>
-                                                        0
-                                                         <Rating
-                                                         readonly
-                                                         initialValue={0}  
-                                                         className="rate"
-                                                     />
-                                                     (0)
-                                                    </span>
-                                                   )}
+                                                  <div className="ratings__isFav">
+                                                    {result.averageRating ? (
+                                                        <span className='meal__rating'>
+                                                        {result.averageRating.averageRating.toFixed(1)}
+                                                            <Rating
+                                                            readonly
+                                                            initialValue={result.averageRating.averageRating}  
+                                                            className="rate"
+                                                        />
+                                                        ({result.averageRating.ratingCount})
+                                                    </span> 
+                                                    ) : (
+                                                        <span className='meal__rating'>
+                                                            0
+                                                            <Rating
+                                                            readonly
+                                                            initialValue={0}  
+                                                            className="rate"
+                                                        />
+                                                        (0)
+                                                        </span>
+                                                    )}
+                                                    {result.isFavorite ? 
+                                                        <FaHeart
+                                                            style={{
+                                                                color: "#dc5167",
+                                                                cursor: "pointer"
+                                                            }}
+                                                           onClick={() => handleRemoveFromFavorites(result.idMeal)} 
+                                                        /> 
+                                                    : 
+                                                        <FaRegHeart
+                                                            style={{
+                                                                color: "#dc5167",
+                                                                cursor: "pointer"
+                                                            }}
+                                                            className=''
+                                                            onClick={() => handleAddToFavorites(result.idMeal)} 
+                                                        /> 
+                                                    }
+                                                  </div>
                                                 <button 
                                                     className="view__recipe"
                                                     onClick={() => handleViewRecipe(result)}  
@@ -251,27 +313,30 @@ console.log("results: 1 ", results);
                         <div className="content">
                             <div className="content__details">
                             <div className='meal__cat'>Category: {result.strCategory}</div>
-                            {result.averageRating ? (
-                                <span className='meal__rating'>
-                                {result.averageRating.toFixed(1)}
-                                <Rating
-                                    readonly
-                                    initialValue={result.averageRating}  
-                                    className="rate"
-                                />
-                                ({result.ratingCount})
-                                </span>
-                            ) : (
-                                <span className='meal__rating'>
-                                0
-                                <Rating
-                                    readonly
-                                    initialValue={0}  
-                                    className="rate"
-                                />
-                                (0)
-                                </span>
-                            )}
+                           
+                                {result.averageRating ? (
+                                    <span className='meal__rating'>
+                                    {result.averageRating.toFixed(1)}
+                                    <Rating
+                                        readonly
+                                        initialValue={result.averageRating}  
+                                        className="rate"
+                                    />
+                                    ({result.ratingCount})
+                                    </span>
+                                ) : (
+                                    <span className='meal__rating'>
+                                    0
+                                    <Rating
+                                        readonly
+                                        initialValue={0}  
+                                        className="rate"
+                                    />
+                                    (0)
+                                    </span>
+                                )}
+
+                            
                             <button 
                                 className="view__recipe"
                                 onClick={() => handleViewRecipe(result)}  

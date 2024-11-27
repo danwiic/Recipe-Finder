@@ -96,7 +96,6 @@ export default function MealDetail() {
       console.log(err);
     }
   }
-
   
   useEffect(() => {
     const fetchMealDetails = async () => {
@@ -123,14 +122,6 @@ export default function MealDetail() {
     fetchComments();    // Call fetchComments to load comment data
     
   }, [id]);
-  
-  
-  
-  
-  
-  
-console.log(meal);
-
 
   useEffect(() => {
     const checkFavoriteStatus = async () => {
@@ -179,12 +170,8 @@ console.log(meal);
     fetchRatingData()
   }, [id])
 
-  
-
   const handleAddToFavorites = async () => {
     try {
-      console.log("Meal ID:", meal.idMeal); // Check if this is set properly
-  
       const response = await axios.post('http://192.168.1.185:8800/favorites/add', {
         user_id: user.id,
         idMeal: meal.idMeal,  // Meal ID
@@ -198,7 +185,6 @@ console.log(meal);
       console.error("Error adding to favorites:", error);
     }
   };
-  
 
   const handleRemoveFromFavorites = async () => {
     try {
@@ -216,7 +202,6 @@ console.log(meal);
       console.error("Error removing from favorites:", error);
     }
   }
-  
 
   if (loading) return <div className="loading"><Loader /></div>
   if (error) return <div>{error}</div>
@@ -260,10 +245,6 @@ console.log(meal);
   };
 
  
-
-
-console.log(comments);
-
 
 
   return (
