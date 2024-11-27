@@ -43,6 +43,7 @@
 
 .pop__con{
     overflow: scroll;
+    width: 600px;
 
     .add__container{
         padding: 20px;

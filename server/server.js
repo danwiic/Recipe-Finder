@@ -120,35 +120,41 @@ app.post("/logout", (req, res) => {
 
 // Add meal
 app.post('/meals', (req, res) => {
-  const { strMeal, strCategory, strArea, strInstructions, strMealThumb, strTags, strYoutube, ingredients, measurements, user_id } = req.body;
+  const { strMeal, strCategory, strArea, strInstructions, strMealThumb, strTags, strYoutube, ingredients, user_id } = req.body;
 
-  console.log("Received data:", req.body);
-  // Convert ingredients and measurements arrays to JSON strings
-  const ingredientsJSON = JSON.stringify(ingredients);
-  const measurementsJSON = JSON.stringify(measurements);
+  // Combine ingredients and measurements (ingredients array provided by the user)
+  const formattedIngredients = ingredients.map(item => item.trim());
 
-  const query = `INSERT INTO meals (strMeal, strCategory, strArea, strInstructions, strMealThumb, strTags, strYoutube, ingredients, measurements, user_id)
-                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+  // Convert the ingredients array to a JSON string
+  const ingredientsJson = JSON.stringify(formattedIngredients);
 
-  db.query(query, [
-      strMeal,
-      strCategory,
-      strArea,
-      strInstructions,
-      strMealThumb,
-      strTags,
-      strYoutube,
-      ingredientsJSON,
-      measurementsJSON,
-      user_id,
-  ], (err, result) => {
-      if (err) {
-          return res.status(500).json({ message: 'Error inserting meal data', error: err });
-      }
+  // SQL query to insert the meal into the test table
+  const query = `
+  INSERT INTO meals (strMeal, strCategory, strArea, strInstructions, strMealThumb, strTags, strYoutube, ingredients, user_id)
+  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+`;
 
-      res.status(201).json({ message: 'Meal successfully added', mealId: result.insertId });
-  });
+db.query(query, [
+  strMeal,
+  strCategory,
+  strArea,
+  strInstructions,
+  strMealThumb,
+  strTags,
+  strYoutube,
+  ingredientsJson,
+  user_id
+], (err, result) => {
+  if (err) {
+    console.error("Error inserting meal data:", err);
+    return res.status(500).json({ message: 'Error inserting meal data', error: err });
+  }
+
+  // Send a response confirming successful insertion
+  res.status(201).json({ message: 'Meal data inserted successfully', id: result.insertId });
 });
+});
+
 
 // Delete meal
 app.delete('/meals/:mealId', (req, res) => {
@@ -257,74 +263,110 @@ app.get('/meal', async (req, res) => {
 });
 
 // search meal by idMeal
-app.get('/meal/:id', (req, res) => {
+app.get('/meal/:id', async (req, res) => {
   const mealId = req.params.id;
 
-  // Query to fetch meal by ID
+  // Query to fetch meal by ID from custom database
   const query = `SELECT * FROM meals WHERE idMeal = ?`;
 
-  db.query(query, [mealId], (err, results) => {
+  db.query(query, [mealId], async (err, results) => {
     if (err) {
+      console.error("Error querying database:", err);
       return res.status(500).json({ error: 'Database query error' });
     }
 
-    if (results.length === 0) {
-      return res.status(404).json({ error: 'Meal not found' });
-    }
+    if (results.length > 0) {
+      // Meal found in custom database, return the meal data
+      const meal = results[0];
 
-    const meal = results[0]; // Get the first (and likely only) result
+      // Initialize empty array for ingredients
+      let ingredients = [];
 
-    // Check if ingredients and measurements exist, if not, set to empty array
-    let ingredients = [];
-    let measurements = [];
-
-    try {
-      if (meal.ingredients) {
-        // Attempt to parse ingredients as JSON or split by commas if parsing fails
-        try {
-          ingredients = JSON.parse(meal.ingredients);
-        } catch (e) {
-          ingredients = meal.ingredients.split(',');  // Fall back to CSV format
+      try {
+        // Handle ingredients - parse from JSON if it's a valid JSON string
+        if (meal.ingredients) {
+          ingredients = JSON.parse(meal.ingredients); // Try parsing as JSON
         }
+      } catch (error) {
+        console.error('Error parsing ingredients:', error);
+        return res.status(500).json({ error: 'Error parsing ingredients' });
       }
 
-      if (meal.measurements) {
-        // Attempt to parse measurements as JSON or split by commas if parsing fails
-        try {
-          measurements = JSON.parse(meal.measurements);
-        } catch (e) {
-          measurements = meal.measurements.split(',');  // Fall back to CSV format
+      // Prepare the response data
+      const response = {
+        idMeal: String(meal.idMeal),  // Ensure idMeal is a string
+        strMeal: meal.strMeal,
+        strCategory: meal.strCategory,
+        strArea: meal.strArea,
+        strInstructions: meal.strInstructions,
+        strMealThumb: meal.strMealThumb,
+        strTags: meal.strTags,
+        strYoutube: meal.strYoutube,
+        ingredients: ingredients,
+        user_id: meal.user_id,
+        created_at: meal.created_at  // Include the creation timestamp
+      };
+
+      // Send the response as JSON
+      return res.json(response);
+    } else {
+      // If meal is not found in custom database, fetch from TheMealDB API
+      try {
+        const apiResponse = await axios.get(`https://www.themealdb.com/api/json/v1/1/lookup.php?i=${mealId}`);
+        
+        if (apiResponse.data.meals && apiResponse.data.meals.length > 0) {
+          const mealData = apiResponse.data.meals[0];
+
+          // Format the ingredients and measurements into a combined format
+          const ingredients = [];
+          for (let i = 1; i <= 20; i++) {
+            const ingredientKey = `strIngredient${i}`;
+            const measureKey = `strMeasure${i}`;
+
+            const ingredient = mealData[ingredientKey];
+            const measurement = mealData[measureKey];
+
+            // Check if ingredient and measurement are valid and non-empty
+            if (ingredient && ingredient.trim()) {
+              // Combine measurement and ingredient and push to the array
+              const ingredientWithMeasurement = `${measurement ? measurement.trim() : '1 unit'} ${ingredient.trim()}`;
+              ingredients.push(ingredientWithMeasurement);
+            }
+          }
+
+          // Create the formatted meal data
+          const formattedMealData = {
+            idMeal: mealData.idMeal,
+            strMeal: mealData.strMeal,
+            strCategory: mealData.strCategory,
+            strArea: mealData.strArea,
+            strInstructions: mealData.strInstructions,
+            strMealThumb: mealData.strMealThumb,
+            strTags: mealData.strTags,
+            strYoutube: mealData.strYoutube,
+            ingredients: ingredients,
+          };
+
+          // Send the formatted data from TheMealDB API as the response
+          return res.json(formattedMealData);
+        } else {
+          return res.status(404).json({ error: 'Meal not found in TheMealDB API' });
         }
+      } catch (error) {
+        console.error("Error fetching from TheMealDB API:", error);
+        return res.status(500).json({ error: 'Error fetching meal details from TheMealDB API' });
       }
-    } catch (error) {
-      console.error('Error parsing ingredients or measurements:', error);
     }
-
-    // Prepare the response data
-    const response = {
-      idMeal: String(meal.idMeal),  // Ensure idMeal is a string
-      strMeal: meal.strMeal,
-      strCategory: meal.strCategory,
-      strArea: meal.strArea,
-      strInstructions: meal.strInstructions,
-      strMealThumb: meal.strMealThumb,
-      strTags: meal.strTags,
-      strYoutube: meal.strYoutube,
-      ingredients: ingredients,
-      measurements: measurements
-    };
-
-    // Send the response as JSON
-    res.json(response);
   });
 });
+
 
 // Add meal to favorites
 app.post('/favorites/add', async (req, res) => {
   const { idMeal, user_id } = req.body;
 
-  // Check if the meal already exists in the meals table
-  db.query('SELECT * FROM meals WHERE idMeal = ?', [idMeal], async (err, results) => {
+  // Check if the meal already exists in the test table
+  db.query('SELECT * FROM test WHERE idMeal = ?', [idMeal], async (err, results) => {
     if (err) {
       return res.status(500).json({ message: "Database error", error: err });
     }
@@ -338,9 +380,8 @@ app.post('/favorites/add', async (req, res) => {
         // Log the meal details from the API for debugging
         console.log("Meal details from API:", mealDetails);
 
-        // Extract ingredients and measurements
+        // Extract ingredients and measurements into a combined format (measurement + ingredient)
         const ingredients = [];
-        const measurements = [];
         for (let i = 1; i <= 20; i++) {
           const ingredientKey = `strIngredient${i}`;
           const measureKey = `strMeasure${i}`;
@@ -350,27 +391,23 @@ app.post('/favorites/add', async (req, res) => {
 
           // Check if ingredient and measurement are valid and non-empty
           if (ingredient && ingredient.trim()) {
-            ingredients.push(ingredient.trim());
-          }
-          if (measurement && measurement.trim()) {
-            measurements.push(measurement.trim());
+            // Combine measurement and ingredient and push to the array
+            const ingredientWithMeasurement = `${measurement ? measurement.trim() : '1 unit'} ${ingredient.trim()}`;
+            ingredients.push(ingredientWithMeasurement);
           }
         }
 
-        // Log the ingredients and measurements to check
+        // Log the ingredients to check
         console.log("Extracted Ingredients:", ingredients);
-        console.log("Extracted Measurements:", measurements);
 
-        // Check if ingredients and measurements are populated
+        // Format the ingredients as a JSON object
         const ingredientsJson = ingredients.length > 0 ? JSON.stringify(ingredients) : null;
-        const measurementsJson = measurements.length > 0 ? JSON.stringify(measurements) : null;
 
         // Log the formatted data before insertion
         console.log("Formatted Ingredients JSON:", ingredientsJson);
-        console.log("Formatted Measurements JSON:", measurementsJson);
 
-        // Insert meal into the meals table
-        const query = `INSERT INTO meals (idMeal, strMeal, strCategory, strArea, strInstructions, strMealThumb, strTags, strYoutube, ingredients, measurements)
+        // Insert meal into the test table
+        const query = `INSERT INTO meals (idMeal, strMeal, strCategory, strArea, strInstructions, strMealThumb, strTags, strYoutube, ingredients, user_id)
                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
 
         db.query(query, [
@@ -383,14 +420,14 @@ app.post('/favorites/add', async (req, res) => {
           mealDetails.strTags,
           mealDetails.strYoutube,
           ingredientsJson,
-          measurementsJson
+          user_id
         ], (err, result) => {
           if (err) {
             console.error("Error inserting meal data:", err);
             return res.status(500).json({ message: 'Error inserting meal data', error: err });
           }
 
-          // After the meal is added to the meals table, now add it to favorites
+          // After the meal is added to the test table, now add it to favorites
           db.query('INSERT INTO favorites (user_id, idMeal) VALUES (?, ?)', [user_id, idMeal], (err, result) => {
             if (err) {
               console.error("Error adding to favorites:", err);
@@ -405,7 +442,7 @@ app.post('/favorites/add', async (req, res) => {
         return res.status(500).json({ message: "Error fetching meal details from TheMealDB", error: error });
       }
     } else {
-      // If the meal already exists in the meals table, just add to favorites
+      // If the meal already exists in the test table, just add to favorites
       db.query('INSERT INTO favorites (user_id, idMeal) VALUES (?, ?)', [user_id, idMeal], (err, result) => {
         if (err) {
           console.error("Error adding to favorites:", err);
@@ -772,5 +809,182 @@ app.delete('/meals/:mealId/comments/:commentId', (req, res) => {
   });
 });
 
+// Total meals
+app.get('/total/meals', (req, res) => {
+  const query = `SELECT COUNT(*) AS total FROM meals`;
+
+  db.query(query, (err, results) => {
+    if (err) {
+      console.error('Error querying total meals:', err);
+      return res.status(500).json({ error: 'Database query error' });
+    }
+
+    // Extract the total count from the results
+    const totalMeals = results[0].total;
+
+    // Respond with the total
+    res.json({ total: totalMeals });
+  });
+});
 
 
+// Fetch all pending recipes
+app.get('/pending', (req, res) => {
+  const query = 'SELECT * FROM pending_recipes WHERE status = "pending"';
+
+  db.query(query, (err, results) => {
+    if (err) {
+      console.error('Error fetching pending recipes:', err);
+      return res.status(500).json({ error: 'Database query error' });
+    }
+
+    res.json(results);
+  });
+});
+
+// Fetch total number of pending recipes
+app.get('/pending/recipes/total', (req, res) => {
+  const query = `SELECT COUNT(*) AS total FROM pending_recipes`;
+
+  db.query(query, (err, results) => {
+    if (err) {
+      console.error('Error fetching total pending recipes:', err);
+      return res.status(500).json({ error: 'Database query error' });
+    }
+
+    // Extract the total from the query result
+    const total = results[0].total;
+
+    res.json({ total });
+  });
+});
+
+
+// Approve and move recipe to meals table
+app.post('/approve/recipe/:id', (req, res) => {
+  const recipeId = req.params.id;
+
+  // Query to fetch the recipe from pending_recipes
+  const fetchQuery = 'SELECT * FROM pending_recipes WHERE id = ?';
+
+  db.query(fetchQuery, [recipeId], (err, results) => {
+    if (err) {
+      console.error('Error fetching the recipe:', err);
+      return res.status(500).json({ error: 'Database query error' });
+    }
+
+    if (results.length === 0) {
+      return res.status(404).json({ error: 'Recipe not found or already processed.' });
+    }
+
+    const recipe = results[0];
+
+    // Query to insert into meals table
+    const insertQuery = `
+      INSERT INTO meals (idMeal, strMeal, strCategory, strArea, strInstructions, strMealThumb, strTags, strYoutube, ingredients, user_id, created_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `;
+
+    const values = [
+      recipe.id,         // Use the same ID or generate a new one if necessary
+      recipe.strMeal,
+      recipe.strCategory,
+      recipe.strArea,
+      recipe.strInstructions,
+      recipe.strMealThumb,
+      recipe.strTags,
+      recipe.strYoutube,
+      recipe.ingredients,
+      recipe.user_id,
+      recipe.created_at,
+    ];
+
+    db.query(insertQuery, values, (insertErr) => {
+      if (insertErr) {
+        console.error('Error inserting recipe into meals table:', insertErr);
+        return res.status(500).json({ error: 'Failed to approve the recipe.' });
+      }
+
+      // Query to delete from pending_recipes
+      const deleteQuery = 'DELETE FROM pending_recipes WHERE id = ?';
+
+      db.query(deleteQuery, [recipeId], (deleteErr) => {
+        if (deleteErr) {
+          console.error('Error deleting recipe from pending_recipes:', deleteErr);
+          return res.status(500).json({ error: 'Failed to remove recipe from pending list.' });
+        }
+
+        res.json({ message: 'Recipe approved and moved to meals table.' });
+      });
+    });
+  });
+});
+
+// Reject a recipe by deleting it
+app.delete('/reject/recipe/:id', (req, res) => {
+  const recipeId = req.params.id;
+
+  // Query to delete the recipe from pending_recipes
+  const deleteQuery = 'DELETE FROM pending_recipes WHERE id = ?';
+
+  db.query(deleteQuery, [recipeId], (err, results) => {
+    if (err) {
+      console.error('Error rejecting the recipe:', err);
+      return res.status(500).json({ error: 'Failed to reject the recipe.' });
+    }
+
+    if (results.affectedRows === 0) {
+      return res.status(404).json({ error: 'Recipe not found.' });
+    }
+
+    res.json({ message: 'Recipe rejected and removed from pending list.' });
+  });
+});
+
+// add recipe into pending table
+app.post('/pending/add', (req, res) => {
+  const {
+    strMeal,
+    strCategory,
+    strArea,
+    strInstructions,
+    strMealThumb,
+    strTags,
+    strYoutube,
+    ingredients,
+    user_id,
+  } = req.body;
+
+  // Validate required fields
+  if (!strMeal || !strInstructions || !ingredients || !user_id) {
+    return res.status(400).json({ error: 'Missing required fields.' });
+  }
+
+  // Query to insert recipe into pending_recipes
+  const query = `
+    INSERT INTO pending_recipes 
+    (strMeal, strCategory, strArea, strInstructions, strMealThumb, strTags, strYoutube, ingredients, user_id)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `;
+
+  const values = [
+    strMeal,
+    strCategory || null,
+    strArea || null,
+    strInstructions,
+    strMealThumb || null,
+    strTags || null,
+    strYoutube || null,
+    JSON.stringify(ingredients), // Convert ingredients array to JSON
+    user_id,
+  ];
+
+  db.query(query, values, (err, result) => {
+    if (err) {
+      console.error('Error inserting recipe into pending_recipes:', err);
+      return res.status(500).json({ error: 'Database error' });
+    }
+
+    res.status(201).json({ message: 'Recipe added to pending list.', recipeId: result.insertId });
+  });
+});

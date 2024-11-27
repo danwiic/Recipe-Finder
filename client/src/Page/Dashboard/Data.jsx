@@ -9,9 +9,13 @@ Line
 export default function Data() {
 
     const [total, setTotal] = useState(0)
+    const [pendingRecipe, setTotalPendingRecipe] = useState(0)
+    const [totalMeals, setTotalMeals] = useState(0)
 
     useEffect(() => {
         fetchTotalUser()
+        fetchTotalPendingRecipe()
+        fetchTotalMeals()
     }, [])
 
     const fetchTotalUser = async () => {
@@ -20,6 +24,32 @@ export default function Data() {
             const data = res.data
             setTotal(data)
             console.log(data);
+            
+        }catch(err){
+            console.log(err);
+        }
+    }
+    console.log(pendingRecipe);
+    
+
+    const fetchTotalPendingRecipe = async () => {
+        try{
+            const res = await axios.get('http://192.168.1.185:8800/pending/recipes/total')
+            const data = res.data
+            setTotalPendingRecipe(data)
+            console.log("pending: ", data);
+            
+        }catch(err){
+            console.log(err);
+        }
+    }
+
+    const fetchTotalMeals = async () => {
+        try{
+            const res = await axios.get('http://192.168.1.185:8800/total/meals')
+            const data = res.data
+            setTotalMeals(data)
+            console.log("pending: ", data);
             
         }catch(err){
             console.log(err);
@@ -39,14 +69,16 @@ export default function Data() {
                         </div>
 
                         <div className="card">
-                            <div className="card__data"> 0</div>
+                            <div className="card__data"> {totalMeals && totalMeals.total ? totalMeals.total : 0}</div>
                             <div className="card__title">
                                 TOTAL RECIPE
                             </div>
                         </div>
 
                         <div className="card">
-                            <div className="card__data"> 0</div>
+                            <div className="card__data"> 
+                                {pendingRecipe && pendingRecipe.total ? pendingRecipe.total : 0}
+                            </div>
                             <div className="card__title">
                                 PENDING RECIPE
                             </div>
