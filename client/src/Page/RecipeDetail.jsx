@@ -142,8 +142,8 @@ export default function MealDetail() {
   const fetchNutrition = async (meal) => {
   
       try {
-        const appId = 'c818f5f7'
-        const appKey = '461ecd5808db3ee1597e6827a2c0f2f8'
+        const appId = 'ae20a581'
+        const appKey = 'a2ecf5215baa651a98ebbdeb09d2f03c'
 
         const response = await axios.post(
           `https://api.edamam.com/api/nutrition-details?app_id=${appId}&app_key=${appKey}`,
@@ -321,7 +321,7 @@ export default function MealDetail() {
               <ul>
                   {meal ? (
                     meal.ingredients.map((ingr, index) => (
-                      <li key={index}>{ingr}</li>
+                      <li key={index}>- {ingr}</li>
                     ))
                   ):(
                     <>

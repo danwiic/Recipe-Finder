@@ -7,6 +7,8 @@ import { useUser } from "../Context/UserContext";
 import { FaTrash } from "react-icons/fa";
 import { Rating } from 'react-simple-star-rating';
 import { useNavigate } from "react-router";
+import { Link } from "react-router-dom";
+Link
 
 export default function Meals() {
   const { user } = useUser();
@@ -138,9 +140,6 @@ export default function Meals() {
     fetchAddedMeal();
   }, []);
 
-  const handleViewRecipe = (recipe) => {
-    navigate(`/recipe/${recipe.idMeal}`);
-  };
 
   return (
     <Layout>
@@ -175,7 +174,13 @@ export default function Meals() {
                             (0)
                           </span>
                         )}
-                        <button className="view__recipe" onClick={() => handleViewRecipe(result)}>VIEW RECIPE</button>
+                        <Link to={`/recipe/${result.idMeal}`}>
+                          <button className="view__recipe" 
+                            // onClick={() => handleViewRecipe(result)}
+                            >
+                              VIEW RECIPE
+                          </button>
+                        </Link>
                       </div>
                     </div>
                   </div>

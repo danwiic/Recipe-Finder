@@ -4,6 +4,10 @@
         display: flex;
         justify-content: space-between;
     }
+
+    .view__recipe{
+        width: 100%;
+    }
     
 }
 
