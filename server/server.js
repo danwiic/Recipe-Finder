@@ -3,6 +3,10 @@ import { db } from "./db.js"
 import express from "express";
 import cors from 'cors'
 import jwt from 'jsonwebtoken'
+import SibApiV3Sdk from 'sib-api-v3-sdk';
+import dotenv from "dotenv"
+
+dotenv.config()
 
 const PORT = 8800
 const app = express();
@@ -153,8 +157,7 @@ db.query(query, [
   // Send a response confirming successful insertion
   res.status(201).json({ message: 'Meal data inserted successfully', id: result.insertId });
 });
-});
-
+})
 
 // Delete meal
 app.delete('/meals/:mealId', (req, res) => {
@@ -358,8 +361,7 @@ app.get('/meal/:id', async (req, res) => {
       }
     }
   });
-});
-
+})
 
 // Add meal to favorites
 app.post('/favorites/add', async (req, res) => {
@@ -448,8 +450,7 @@ app.post('/favorites/add', async (req, res) => {
       });
     }
   });
-});
-
+})
 
 // Fetch the meals that are added to favorites by the user
 app.get('/favorites/:user_id', async (req, res) => {
@@ -470,11 +471,8 @@ app.get('/favorites/:user_id', async (req, res) => {
         // Try to get meal details from your custom API using the new /meal/:id endpoint
         const mealFromCustomAPI = await axios.get(`http://192.168.1.185:8800/meal/${fav.idMeal}`).then(response => response.data ? response.data : null);
 
-        // If meal is not found, try fetching from TheMealDB API
-        const mealFromTheMealDB = mealFromCustomAPI ? null : await axios.get(`https://www.themealdb.com/api/json/v1/1/lookup.php?i=${fav.idMeal}`).then(response => response.data.meals ? response.data.meals[0] : null);
-
         // Return meal from custom API if available, otherwise return from TheMealDB API
-        return mealFromCustomAPI || mealFromTheMealDB;
+        return mealFromCustomAPI;
       });
 
       const meals = (await Promise.all(mealPromises)).filter(Boolean); // Filter out null values if not found in either API
@@ -534,7 +532,6 @@ app.get('/favorites/check/:userId/:mealId', (req, res) => {
       res.json({ isFavorite });
   });
 });
-
 
 // Get the number of users who added a specific meal to their favorites
 
@@ -1004,5 +1001,112 @@ app.post('/pending/add', (req, res) => {
     }
 
     res.status(201).json({ message: 'Recipe added to pending list.', recipeId: result.insertId });
+  });
+});
+
+// generate otp for email verification and password recovery
+
+const brevo = new SibApiV3Sdk.TransactionalEmailsApi();
+SibApiV3Sdk.ApiClient.instance.authentications['api-key'].apiKey = process.env.BREVO_API_KEY;
+console.log("Brevo API Key:", process.env.BREVO_API_KEY);
+
+app.post("/otp/requesr", (req, res) => {
+  const { email } = req.body;
+
+  if (!email) {
+    return res.status(400).json({ message: "Email is required" });
+  }
+
+  const currentTime = new Date();
+
+  // Check if email exists in the users table
+  db.query("SELECT * FROM users WHERE email = ?", [email], (err, results) => {
+    if (err) return res.status(500).json({ message: "Database error", error: err });
+
+    if (results.length === 0) {
+      return res.status(404).json({ message: "Email not found in our records" });
+    }
+
+    // Email exists in the users table, now check for cooldown period
+    db.query(
+      "SELECT last_requested_at FROM otps WHERE email = ?",
+      [email],
+      async (err, results) => {
+        if (err) return res.status(500).json({ message: "Database error", error: err });
+
+        const lastRequestedAt = results[0]?.last_requested_at;
+
+        // Check if cooldown period has passed (1 minute)
+        if (lastRequestedAt && new Date(lastRequestedAt).getTime() + 60000 > currentTime.getTime()) {
+          return res.status(429).json({ message: "Please wait 1 minute before requesting another OTP" });
+        }
+
+        // Generate new OTP
+        const otp = Math.floor(100000 + Math.random() * 900000).toString(); // 6-digit OTP
+        const expiresAt = new Date(currentTime.getTime() + 5 * 60000); // OTP valid for 5 minutes
+
+        // Send OTP via Brevo first
+        try {
+          await brevo.sendTransacEmail({
+            sender: { email: "danpirante9@gmail.com", name: "Recipe Radar" },
+            to: [{ email }],
+            subject: "Your OTP Code",
+            textContent: `Your OTP is ${otp}. It will expire in 5 minutes.`,
+          });
+
+          // Insert or update OTP in the database only after email is successfully sent
+          db.query(
+            "INSERT INTO otps (email, otp, expires_at, last_requested_at) VALUES (?, ?, ?, ?) " +
+              "ON DUPLICATE KEY UPDATE otp = ?, expires_at = ?, last_requested_at = ?",
+            [email, otp, expiresAt, currentTime, otp, expiresAt, currentTime],
+            (err) => {
+              if (err) return res.status(500).json({ message: "Database error", error: err });
+
+              return res.status(200).json({ message: "OTP sent and saved successfully" });
+            }
+          );
+
+        } catch (emailErr) {
+          // If email fails, return an error response
+          return res.status(500).json({ message: "Error sending email", error: emailErr });
+        }
+      }
+    );
+  });
+});
+
+
+app.post("/otp/verify", (req, res) => {
+  const { email, otp } = req.body;
+
+  if (!email || !otp) {
+    return res.status(400).json({ message: "Email and OTP are required" });
+  }
+
+  // Check if the email exists and fetch OTP data from the database
+  db.query("SELECT * FROM otps WHERE email = ?", [email], (err, results) => {
+    if (err) return res.status(500).json({ message: "Database error", error: err });
+
+    if (results.length === 0) {
+      return res.status(404).json({ message: "Email not found or OTP not generated" });
+    }
+
+    const otpRecord = results[0];
+
+    // Check if OTP is valid and hasn't expired
+    const currentTime = new Date();
+    const otpExpiresAt = new Date(otpRecord.expires_at);
+    
+    if (currentTime > otpExpiresAt) {
+      return res.status(400).json({ message: "OTP has expired" });
+    }
+
+    // Check if the OTP entered by the user matches the stored OTP
+    if (otp !== otpRecord.otp) {
+      return res.status(400).json({ message: "Invalid OTP" });
+    }
+
+    // OTP is valid
+    return res.status(200).json({ message: "OTP verified successfully" });
   });
 });
