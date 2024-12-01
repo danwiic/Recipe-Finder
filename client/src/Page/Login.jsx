@@ -106,7 +106,7 @@ export default function Login() {
               </div>
 
             <div className="action">
-              <Link to="/forgot-password">Forgot Password?</Link>
+              <Link to="/recover">Forgot Password?</Link>
               {error && (
                 <p className="error-message" 
                 style={{

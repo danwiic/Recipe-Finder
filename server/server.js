@@ -11,6 +11,8 @@ dotenv.config()
 const PORT = 8800
 const app = express();
 app.use(express.json())
+const brevo = new SibApiV3Sdk.TransactionalEmailsApi();
+SibApiV3Sdk.ApiClient.instance.authentications['api-key'].apiKey = process.env.BREVO_API_KEY;
 
 app.use(cors({
   origin: ['http://192.168.1.185:5173', 'http://localhost:5173'],
@@ -1005,12 +1007,7 @@ app.post('/pending/add', (req, res) => {
 });
 
 // generate otp for email verification and password recovery
-
-const brevo = new SibApiV3Sdk.TransactionalEmailsApi();
-SibApiV3Sdk.ApiClient.instance.authentications['api-key'].apiKey = process.env.BREVO_API_KEY;
-console.log("Brevo API Key:", process.env.BREVO_API_KEY);
-
-app.post("/otp/requesr", (req, res) => {
+app.post("/otp/request", (req, res) => {
   const { email } = req.body;
 
   if (!email) {
@@ -1024,7 +1021,7 @@ app.post("/otp/requesr", (req, res) => {
     if (err) return res.status(500).json({ message: "Database error", error: err });
 
     if (results.length === 0) {
-      return res.status(404).json({ message: "Email not found in our records" });
+      return res.status(404).json({ message: "Email doesn't exist in our records" });
     }
 
     // Email exists in the users table, now check for cooldown period
@@ -1075,7 +1072,6 @@ app.post("/otp/requesr", (req, res) => {
   });
 });
 
-
 app.post("/otp/verify", (req, res) => {
   const { email, otp } = req.body;
 
@@ -1103,10 +1099,39 @@ app.post("/otp/verify", (req, res) => {
 
     // Check if the OTP entered by the user matches the stored OTP
     if (otp !== otpRecord.otp) {
-      return res.status(400).json({ message: "Invalid OTP" });
+      return res.status(402).json({ message: "Invalid OTP" });
     }
 
     // OTP is valid
     return res.status(200).json({ message: "OTP verified successfully" });
+  });
+});
+
+app.post('/change-password', (req, res) => {
+  const { email, newPassword, confirmPassword } = req.body;
+
+  // Check if newPassword and confirmPassword match
+  if (newPassword !== confirmPassword) {
+      return res.status(400).json({ message: 'New password and confirm password do not match' });
+  }
+
+  // Check if the user exists by email
+  db.query('SELECT * FROM users WHERE email = ?', [email], (err, results) => {
+      if (err) {
+          return res.status(500).json({ message: 'Server error' });
+      }
+
+      if (results.length === 0) {
+          return res.status(404).json({ message: 'User not found' });
+      }
+
+      // Update the password in the database (plaintext)
+      db.query('UPDATE users SET password = ? WHERE email = ?', [newPassword, email], (updateErr) => {
+          if (updateErr) {
+              return res.status(500).json({ message: 'Error updating password' });
+          }
+
+          res.status(200).json({ message: 'Password successfully updated' });
+      });
   });
 });

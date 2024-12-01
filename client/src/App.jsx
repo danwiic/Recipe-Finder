@@ -11,6 +11,7 @@ import Dashboard from "./Page/Dashboard.jsx";
 import Data from './Page/Dashboard/Data.jsx'
 import PendingRecipe from './Page/Dashboard/PendingRecipe.jsx'
 import ManageUsers from './Page/Dashboard/ManageUsers.jsx'
+import Recovery from "./Page/Recovery.jsx";
 
 export default function App() {
   return (
@@ -21,6 +22,7 @@ export default function App() {
             {/* Public Routes */}
             <Route path="/" element={<Login />} />
             <Route path="/signup" element={<Signup />} />
+            <Route path="/recover" element={<Recovery />} />
             
 
             <Route 
