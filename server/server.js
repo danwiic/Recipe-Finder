@@ -202,7 +202,6 @@ app.post('/meals', (req, res) => {
   );
 });
 
-
 // Delete meal
 app.delete('/meals/:mealId', (req, res) => {
   const mealId = req.params.mealId;
@@ -287,7 +286,6 @@ app.get('/meal', async (req, res) => {
     res.json({ meals: formattedMeals });
   });
 });
-
 
 // Fetch all meal categories
 app.get('/categories', (req, res) => {
@@ -768,11 +766,12 @@ app.get('/top_rated', (req, res) => {
 // fetch meals added by a specific user with their average rating and rating count
 app.get('/meals/user/:user_id', (req, res) => {
   const { user_id } = req.params;
-  const page = req.query.page || 1;
-  const limit = 10; // Adjust as needed
+  const page = parseInt(req.query.page) || 1;
+  const limit = 20; // Adjusted to 20 results per page
   const offset = (page - 1) * limit;
 
-  const query = `
+  const totalQuery = `SELECT COUNT(*) AS totalMeals FROM meals WHERE user_id = ?;`;
+  const mealsQuery = `
     SELECT m.*, 
            c.category_name,  -- Fetch category name instead of category ID
            AVG(r.rating) AS averageRating, 
@@ -785,16 +784,32 @@ app.get('/meals/user/:user_id', (req, res) => {
     LIMIT ? OFFSET ?;
   `;
 
-  db.query(query, [user_id, limit, offset], (err, results) => {
+  // Fetch the total count first
+  db.query(totalQuery, [user_id], (err, totalResult) => {
     if (err) {
       return res.status(500).json({ message: "Database error", error: err });
     }
 
-    if (results.length === 0) {
-      return res.status(404).json({ message: "No meals found for this user" });
-    }
+    const totalMeals = totalResult[0]?.totalMeals || 0;
+    const totalPages = Math.ceil(totalMeals / limit);
 
-    res.status(200).json({ meals: results });
+    // Fetch the meals with pagination
+    db.query(mealsQuery, [user_id, limit, offset], (err, mealResults) => {
+      if (err) {
+        return res.status(500).json({ message: "Database error", error: err });
+      }
+
+      if (mealResults.length === 0) {
+        return res.status(404).json({ message: "No meals found for this user" });
+      }
+
+      res.status(200).json({
+        meals: mealResults,
+        totalMeals,
+        totalPages,
+        currentPage: page,
+      });
+    });
   });
 });
 
@@ -1015,8 +1030,6 @@ app.post('/pending/approve/:id', (req, res) => {
     });
   });
 });
-
-
 
 // Reject a recipe by deleting it
 app.delete('/pending/reject/:id', (req, res) => {
