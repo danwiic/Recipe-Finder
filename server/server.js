@@ -126,40 +126,82 @@ app.post("/logout", (req, res) => {
 
 // Add meal
 app.post('/meals', (req, res) => {
-  const { strMeal, strCategory, strArea, strInstructions, strMealThumb, strTags, strYoutube, ingredients, user_id } = req.body;
+  const { 
+    strMeal, 
+    category_id, 
+    strArea, 
+    strInstructions, 
+    strMealThumb,
+    strYoutube, 
+    ingredients, 
+    user_id 
+  } = req.body;
 
-  // Combine ingredients and measurements (ingredients array provided by the user)
-  const formattedIngredients = ingredients.map(item => item.trim());
-
-  // Convert the ingredients array to a JSON string
-  const ingredientsJson = JSON.stringify(formattedIngredients);
-
-  // SQL query to insert the meal into the test table
-  const query = `
-  INSERT INTO meals (strMeal, strCategory, strArea, strInstructions, strMealThumb, strTags, strYoutube, ingredients, user_id)
-  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-`;
-
-db.query(query, [
-  strMeal,
-  strCategory,
-  strArea,
-  strInstructions,
-  strMealThumb,
-  strTags,
-  strYoutube,
-  ingredientsJson,
-  user_id
-], (err, result) => {
-  if (err) {
-    console.error("Error inserting meal data:", err);
-    return res.status(500).json({ message: 'Error inserting meal data', error: err });
+  // Validate required fields
+  if (!strMeal || !category_id || !ingredients || ingredients.length === 0 || !user_id) {
+    return res.status(400).json({ message: "Missing required fields." });
   }
 
-  // Send a response confirming successful insertion
-  res.status(201).json({ message: 'Meal data inserted successfully', id: result.insertId });
+  // Format ingredients as JSON
+  const formattedIngredients = JSON.stringify(ingredients.map(item => item.trim()));
+
+  // Check or insert the category
+  db.query(
+    'SELECT id FROM categories WHERE category_name = ?',
+    [category_id],
+    (err, existingCategory) => {
+      if (err) {
+        console.error("Error checking category:", err);
+        return res.status(500).json({ message: 'Error checking category', error: err });
+      }
+
+      const categoryId = existingCategory.length > 0
+        ? existingCategory[0].id
+        : (function() {
+            return new Promise((resolve, reject) => {
+              db.query(
+                'INSERT INTO categories (category_name) VALUES (?)',
+                [category_id],
+                (err, result) => {
+                  if (err) reject(err);
+                  else resolve(result.insertId);
+                }
+              );
+            });
+          })();
+
+      categoryId.then(async (categoryId) => {
+        // Insert the meal
+        db.query(
+          `INSERT INTO meals (strMeal, category_id, strArea, strInstructions, strMealThumb, strYoutube, ingredients, user_id)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+          [
+            strMeal,
+            categoryId,
+            strArea,
+            strInstructions,
+            strMealThumb,
+            strYoutube,
+            formattedIngredients,
+            user_id
+          ],
+          (err, result) => {
+            if (err) {
+              console.error("Error inserting meal data:", err);
+              return res.status(500).json({ message: 'Error inserting meal data', error: err });
+            }
+
+            res.status(201).json({ message: 'Meal data inserted successfully', id: result.insertId });
+          }
+        );
+      }).catch((err) => {
+        console.error("Error inserting category:", err);
+        return res.status(500).json({ message: 'Error inserting category', error: err });
+      });
+    }
+  );
 });
-})
+
 
 // Delete meal
 app.delete('/meals/:mealId', (req, res) => {
@@ -190,80 +232,78 @@ app.get('/meal', async (req, res) => {
     return res.status(400).json({ message: "Search term is required" });
   }
 
-  // Query your database for meals based on the search term
-  db.query('SELECT * FROM meals WHERE strMeal LIKE ?', [`%${search}%`], async (err, results) => {
+  // Query your database for meals based on the search term and include category name
+  db.query(`
+    SELECT m.*, c.category_name
+    FROM meals m
+    LEFT JOIN categories c ON m.category_id = c.id
+    WHERE m.strMeal LIKE ?`, [`%${search}%`], async (err, results) => {
     if (err) {
+      console.error('Error fetching meals:', err);
       return res.status(500).json({ message: "Error fetching meals", error: err });
     }
 
     const formattedMeals = [];
-    
-    // Loop through each meal in the results
+
     for (const meal of results) {
-      let ingredients = [];
-      let measurements = [];
-
       try {
-        // Handle ingredients: try to parse as JSON or split as CSV
-        if (meal.ingredients) {
-          try {
-            ingredients = JSON.parse(meal.ingredients);  // Attempt to parse as JSON
-          } catch (e) {
-            ingredients = meal.ingredients.split(',');  // Fall back to CSV format if JSON parsing fails
+        // Parse ingredients as JSON or use an empty array if null
+        const ingredients = meal.ingredients ? JSON.parse(meal.ingredients) : [];
+
+        // Format ingredients (ensure 20 fields with null if not present)
+        const formattedIngredients = {};
+        for (let i = 1; i <= 20; i++) {
+          formattedIngredients[`strIngredient${i}`] = ingredients[i - 1] || null;
+        }
+
+        // Check if the meal exists in TheMealDB API
+        try {
+          const { data } = await axios.get(`https://www.themealdb.com/api/json/v1/1/lookup.php?i=${meal.idMeal}`);
+          if (data.meals && data.meals.length > 0) {
+            continue; // Skip if the meal exists in TheMealDB
           }
+        } catch (apiError) {
+          console.error('Error checking TheMealDB API:', apiError);
         }
-        
-        // Handle measurements: try to parse as JSON or split as CSV
-        if (meal.measurements) {
-          try {
-            measurements = JSON.parse(meal.measurements);  // Attempt to parse as JSON
-          } catch (e) {
-            measurements = meal.measurements.split(',');  // Fall back to CSV format if JSON parsing fails
-          }
-        }
-      } catch (error) {
-        console.error('Error processing ingredients or measurements:', error);
+
+        // Add the formatted meal to the list
+        formattedMeals.push({
+          idMeal: String(meal.idMeal),
+          strMeal: meal.strMeal,
+          strCategory: meal.category_name, // Include the category name here
+          strArea: meal.strArea,
+          strInstructions: meal.strInstructions,
+          strMealThumb: meal.strMealThumb,
+          strYoutube: meal.strYoutube,
+          ...formattedIngredients,
+          user_id: meal.user_id,
+          created_at: meal.created_at
+        });
+      } catch (processError) {
+        console.error('Error processing meal:', processError);
       }
-
-      const formattedIngredients = {};
-      const formattedMeasurements = {};
-
-      // Ensure we have 20 ingredients and measurements
-      for (let i = 1; i <= 20; i++) {
-        formattedIngredients[`strIngredient${i}`] = ingredients[i - 1] || null;  // Use null if not available
-        formattedMeasurements[`strMeasure${i}`] = measurements[i - 1] || null;  // Use null if not available
-      }
-
-      // Check if the meal exists in TheMealDB API
-      try {
-        const { data } = await axios.get(`https://www.themealdb.com/api/json/v1/1/lookup.php?i=${meal.idMeal}`);
-
-        // If the meal exists in TheMealDB API, skip adding it to the result
-        if (data.meals && data.meals.length > 0) {
-          continue;  // Skip this meal if it exists in TheMealDB API
-        }
-      } catch (error) {
-        console.error('Error checking TheMealDB API:', error);
-      }
-
-      // If the meal is not found in TheMealDB, add it to the formatted meals
-      formattedMeals.push({
-        idMeal: String(meal.idMeal),  // Ensure idMeal is always a string
-        strMeal: meal.strMeal,
-        strCategory: meal.strCategory,
-        strArea: meal.strArea,
-        strInstructions: meal.strInstructions,
-        strMealThumb: meal.strMealThumb,
-        strTags: meal.strTags,
-        strYoutube: meal.strYoutube,
-        ...formattedIngredients,
-        ...formattedMeasurements,
-        user_id: meal.user_id,
-        created_at: meal.created_at
-      });
     }
 
     res.json({ meals: formattedMeals });
+  });
+});
+
+
+// Fetch all meal categories
+app.get('/categories', (req, res) => {
+  // Query to fetch all categories
+  db.query('SELECT * FROM categories ORDER BY category_name ASC', (err, results) => {
+    if (err) {
+      console.error('Error fetching categories:', err);
+      return res.status(500).json({ message: 'Error fetching categories', error: err });
+    }
+
+    if (results.length === 0) {
+      return res.status(404).json({ message: 'No categories found.' });
+    }
+
+    // Directly return the array of categories
+    res.status(200).json(results);
   });
 });
 
@@ -624,11 +664,12 @@ app.get('/meal/:idMeal/ratings/count', (req, res) => {
 
 // top 5 favorite meal
 app.get('/top_meals', async (req, res) => {
-  // Step 1: Get the top 5 favorited meal IDs
+  // Step 1: Get the top 5 favorited meal IDs with their category_id
   db.query(
-    `SELECT idMeal, COUNT(*) AS favorite_count 
-     FROM favorites 
-     GROUP BY idMeal 
+    `SELECT f.idMeal, COUNT(*) AS favorite_count, m.category_id 
+     FROM favorites f
+     JOIN meals m ON f.idMeal = m.idMeal  -- Join to get category_id from meals table
+     GROUP BY f.idMeal, m.category_id
      ORDER BY favorite_count DESC 
      LIMIT 5`, // Get the top 5 meals with the highest counts
     async (err, results) => {
@@ -642,32 +683,46 @@ app.get('/top_meals', async (req, res) => {
 
       try {
         // Step 2: For each meal ID, attempt to fetch meal details
-        const mealPromises = results.map(async (row) => {
+        const mealPromises = results.map((row) => {
           const mealId = row.idMeal;
           const favoriteCount = row.favorite_count;
+          const categoryId = row.category_id;
 
-          // Try to fetch meal details from custom API first
-          const mealFromCustomAPI = await axios
-            .get(`http://192.168.1.185:8800/meal/${mealId}`)
-            .then(response => response.data ? response.data : null)
-            .catch(() => null);
+          // Fetch the category name from categories table
+          return new Promise((resolve, reject) => {
+            const categoryQuery = `SELECT category_name FROM categories WHERE id = ?`;
+            db.query(categoryQuery, [categoryId], async (err, categoryResult) => {
+              if (err) {
+                reject(err);
+              }
 
-          // If not found in custom API, fetch from TheMealDB API
-          const mealFromTheMealDB = mealFromCustomAPI
-            ? null
-            : await axios
-                .get(`https://www.themealdb.com/api/json/v1/1/lookup.php?i=${mealId}`)
-                .then(response => response.data.meals ? response.data.meals[0] : null)
+              const categoryName = categoryResult[0]?.category_name || 'Unknown';
+
+              // Try to fetch meal details from custom API first
+              const mealFromCustomAPI = await axios
+                .get(`http://192.168.1.185:8800/meal/${mealId}`)
+                .then(response => response.data ? response.data : null)
                 .catch(() => null);
 
-          const mealDetails = mealFromCustomAPI || mealFromTheMealDB;
+              // If not found in custom API, fetch from TheMealDB API
+              const mealFromTheMealDB = mealFromCustomAPI
+                ? null
+                : await axios
+                    .get(`https://www.themealdb.com/api/json/v1/1/lookup.php?i=${mealId}`)
+                    .then(response => response.data.meals ? response.data.meals[0] : null)
+                    .catch(() => null);
 
-          if (mealDetails) {
-            // Include favorite count with meal details
-            mealDetails.favoriteCount = favoriteCount;
-          }
+              const mealDetails = mealFromCustomAPI || mealFromTheMealDB;
 
-          return mealDetails;
+              if (mealDetails) {
+                // Include favorite count and category name with meal details
+                mealDetails.favoriteCount = favoriteCount;
+                mealDetails.category_name = categoryName;
+              }
+
+              resolve(mealDetails);
+            });
+          });
         });
 
         // Step 3: Resolve all promises and filter out any null values
@@ -684,9 +739,13 @@ app.get('/top_meals', async (req, res) => {
 // top 5 high rated meal
 app.get('/top_rated', (req, res) => {
   const query = `
-    SELECT m.*, AVG(r.rating) AS averageRating, COUNT(r.rating) AS ratingCount
+    SELECT m.*, 
+           AVG(r.rating) AS averageRating, 
+           COUNT(r.rating) AS ratingCount, 
+           c.category_name
     FROM meals m
     JOIN ratings r ON m.idMeal = r.meal_id  -- Use 'meal_id' from ratings table
+    LEFT JOIN categories c ON m.category_id = c.id  -- Join to get category name
     GROUP BY m.idMeal
     HAVING ratingCount >= 5  -- Optional: only consider meals with 5 or more ratings
     ORDER BY averageRating DESC, ratingCount DESC
@@ -701,6 +760,7 @@ app.get('/top_rated', (req, res) => {
     if (results.length === 0) {
       return res.status(404).json({ message: "No ratings found" });
     }
+
     res.status(200).json({ topRatedMeals: results });
   });
 });
@@ -708,18 +768,24 @@ app.get('/top_rated', (req, res) => {
 // fetch meals added by a specific user with their average rating and rating count
 app.get('/meals/user/:user_id', (req, res) => {
   const { user_id } = req.params;
+  const page = req.query.page || 1;
+  const limit = 10; // Adjust as needed
+  const offset = (page - 1) * limit;
 
   const query = `
     SELECT m.*, 
+           c.category_name,  -- Fetch category name instead of category ID
            AVG(r.rating) AS averageRating, 
            COUNT(r.rating) AS ratingCount
     FROM meals m
     LEFT JOIN ratings r ON m.idMeal = r.meal_id
+    LEFT JOIN categories c ON m.category_id = c.id  -- Ensure 'category_id' in meals matches 'id' in categories
     WHERE m.user_id = ?
-    GROUP BY m.idMeal;
+    GROUP BY m.idMeal, c.category_name  -- Group by meal ID and category name
+    LIMIT ? OFFSET ?;
   `;
 
-  db.query(query, [user_id], (err, results) => {
+  db.query(query, [user_id, limit, offset], (err, results) => {
     if (err) {
       return res.status(500).json({ message: "Database error", error: err });
     }
@@ -877,6 +943,21 @@ app.get('/pending/recipes/total', (req, res) => {
   });
 });
 
+// Total number if categories available
+app.get('/categories/total', (req, res) => {
+  // Query to count all categories
+  db.query('SELECT COUNT(*) AS categoryCount FROM categories', (err, results) => {
+    if (err) {
+      console.error('Error counting categories:', err);
+      return res.status(500).json({ message: 'Error counting categories', error: err });
+    }
+
+    // Return the count of categories
+    const count = results[0].categoryCount;
+    res.status(200).json({ categoryCount: count });
+  });
+});
+
 // Approve and move recipe to meals table
 app.post('/pending/approve/:id', (req, res) => {
   const recipeId = req.params.id;
@@ -898,22 +979,20 @@ app.post('/pending/approve/:id', (req, res) => {
 
     // Query to insert into meals table
     const insertQuery = `
-      INSERT INTO meals (idMeal, strMeal, strCategory, strArea, strInstructions, strMealThumb, strTags, strYoutube, ingredients, user_id, created_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO meals (idMeal, strMeal, category_id, strArea, strInstructions, strMealThumb, strYoutube, ingredients, user_id)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     `;
 
     const values = [
       recipe.id,         // Use the same ID or generate a new one if necessary
       recipe.strMeal,
-      recipe.strCategory,
+      recipe.category_id, // Use category_id directly from pending_recipes
       recipe.strArea,
       recipe.strInstructions,
       recipe.strMealThumb,
-      recipe.strTags,
       recipe.strYoutube,
       recipe.ingredients,
       recipe.user_id,
-      recipe.created_at,
     ];
 
     db.query(insertQuery, values, (insertErr) => {
@@ -936,6 +1015,8 @@ app.post('/pending/approve/:id', (req, res) => {
     });
   });
 });
+
+
 
 // Reject a recipe by deleting it
 app.delete('/pending/reject/:id', (req, res) => {
@@ -962,35 +1043,38 @@ app.delete('/pending/reject/:id', (req, res) => {
 app.post('/pending/add', (req, res) => {
   const {
     strMeal,
-    strCategory,
+    category_id,  // Updated to use category_id instead of strCategory
     strArea,
     strInstructions,
     strMealThumb,
-    strTags,
     strYoutube,
     ingredients,
     user_id,
   } = req.body;
 
   // Validate required fields
-  if (!strMeal || !strInstructions || !ingredients || !user_id) {
-    return res.status(400).json({ error: 'Missing required fields.' });
+  if (!strMeal || !category_id || !strInstructions || !ingredients || !user_id) {
+    return res.status(400).json({ error: 'Missing required fields: strMeal, category_id, strInstructions, ingredients, user_id are required.' });
+  }
+
+  // Validate ingredients array is not empty
+  if (!Array.isArray(ingredients) || ingredients.length === 0) {
+    return res.status(400).json({ error: 'Ingredients must be a non-empty array.' });
   }
 
   // Query to insert recipe into pending_recipes
   const query = `
     INSERT INTO pending_recipes 
-    (strMeal, strCategory, strArea, strInstructions, strMealThumb, strTags, strYoutube, ingredients, user_id)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    (strMeal, category_id, strArea, strInstructions, strMealThumb, strYoutube, ingredients, user_id)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
   `;
 
   const values = [
     strMeal,
-    strCategory || null,
+    category_id,  // Insert category_id instead of strCategory
     strArea || null,
     strInstructions,
     strMealThumb || null,
-    strTags || null,
     strYoutube || null,
     JSON.stringify(ingredients), // Convert ingredients array to JSON
     user_id,
@@ -1005,6 +1089,7 @@ app.post('/pending/add', (req, res) => {
     res.status(201).json({ message: 'Recipe added to pending list.', recipeId: result.insertId });
   });
 });
+
 
 // generate otp for email verification and password recovery
 app.post("/otp/request", (req, res) => {
@@ -1072,6 +1157,7 @@ app.post("/otp/request", (req, res) => {
   });
 });
 
+// verify if the otp is valid, expired, or invalid
 app.post("/otp/verify", (req, res) => {
   const { email, otp } = req.body;
 
@@ -1107,6 +1193,7 @@ app.post("/otp/verify", (req, res) => {
   });
 });
 
+// change password
 app.post('/change-password', (req, res) => {
   const { email, newPassword, confirmPassword } = req.body;
 

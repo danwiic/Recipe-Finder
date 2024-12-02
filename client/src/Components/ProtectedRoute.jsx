@@ -10,17 +10,18 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
+  const [redirecting, setRedirecting] = useState(false); // Added state to track if navigation has happened
 
-  // Check if user exists and has the required role
   const hasAccess = user && allowedRoles.includes(user.role);
 
   useEffect(() => {
-    if (!user) {
+    if (!user && !open) {
       setOpen(true);
-    } else if (!hasAccess) {
-      navigate("/");
+    } else if (!hasAccess && !redirecting) {
+      setRedirecting(true); // Set redirecting to true before calling navigate
+      navigate("/", { replace: true }); // Use replace to avoid adding another entry in the history stack
     }
-  }, [user, hasAccess, navigate, location]);
+  }, [user, hasAccess, navigate, location, open, redirecting]); // Added redirecting and open to the dependencies
 
   // If no user, show the popup
   if (!user) {
@@ -30,7 +31,6 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
           <div className="message">
             <CgUnavailable /> <h3>Oops, You're not authorized to access this page!</h3>
           </div>
-
 
           <div className="actions">
             <Link to="/">

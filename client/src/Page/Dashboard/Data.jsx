@@ -11,11 +11,13 @@ export default function Data() {
     const [total, setTotal] = useState(0)
     const [pendingRecipe, setTotalPendingRecipe] = useState(0)
     const [totalMeals, setTotalMeals] = useState(0)
+    const [totalCategory, setTotalCategory] = useState(0)
 
     useEffect(() => {
         fetchTotalUser()
         fetchTotalPendingRecipe()
         fetchTotalMeals()
+        fetchTotalCategories()
     }, [])
 
     const fetchTotalUser = async () => {
@@ -29,7 +31,6 @@ export default function Data() {
             console.log(err);
         }
     }
-    console.log(pendingRecipe);
     
 
     const fetchTotalPendingRecipe = async () => {
@@ -37,8 +38,6 @@ export default function Data() {
             const res = await axios.get('http://192.168.1.185:8800/pending/recipes/total')
             const data = res.data
             setTotalPendingRecipe(data)
-            console.log("pending: ", data);
-            
         }catch(err){
             console.log(err);
         }
@@ -49,12 +48,22 @@ export default function Data() {
             const res = await axios.get('http://192.168.1.185:8800/total/meals')
             const data = res.data
             setTotalMeals(data)
-            console.log("pending: ", data);
-            
         }catch(err){
             console.log(err);
         }
     }
+
+
+    const fetchTotalCategories = async () => {
+        try{
+            const res = await axios.get('http://192.168.1.185:8800/categories/total')
+            const data = res.data
+            setTotalCategory(data)
+        }catch(err){
+            console.log(err);
+        }
+    }
+    
 
     return(
         <div>
@@ -85,7 +94,9 @@ export default function Data() {
                         </div>
 
                         <div className="card">
-                            <div className="card__data"> 0</div>
+                            <div className="card__data">
+                                {totalCategory && totalCategory.categoryCount ? totalCategory.categoryCount : 0}
+                            </div>
                             <div className="card__title">
                                 TOTAL CATEGORY
                             </div>

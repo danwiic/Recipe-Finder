@@ -2,42 +2,90 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import Layout from "../Components/Layout";
 import Popup from "../Components/Popup";
-import "./Style/Meals.css"
+import "./Style/Meals.css";
 import { useUser } from "../Context/UserContext";
-import { FaTrash } from "react-icons/fa";
-import { Rating } from 'react-simple-star-rating';
+import { Rating } from "react-simple-star-rating";
 import { useNavigate } from "react-router";
 import { Link } from "react-router-dom";
-Link
+import Loader from "../Components/Loader";
+import { FaTrashAlt } from "react-icons/fa";
 
 export default function Meals() {
   const { user } = useUser();
   const [mealData, setMealData] = useState({
     strMeal: "",
-    strCategory: "",
+    category_id: "",
     strArea: "",
     strInstructions: "",
     strMealThumb: "",
-    strTags: "",
     strYoutube: "",
     ingredients: [""],
-    user_id: user.id
+    user_id: user.id,
   });
 
   const [message, setMessage] = useState("");
   const [open, setOpen] = useState(false);
-  const [added, setAdded] = useState({});
-  
+  const [added, setAdded] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [pageSize] = useState(20);
   const navigate = useNavigate();
+
+  // Fetch categories from API
+  const fetchCategories = async () => {
+    try {
+      const res = await axios.get(`http://192.168.1.185:8800/categories`);
+      setCategories(res.data);
+    } catch (err) {
+      console.log(err);
+    }
+  };
+
+  // Submit the meal data for admin or review purposes
+  const handleSubmitToReview = async (e) => {
+    e.preventDefault();
+    try {
+      const res = await axios.post("http://192.168.1.185:8800/pending/add", {
+        ...mealData,
+        ingredients: mealData.ingredients,
+      });
+
+      setMessage(res.data.message);
+      resetMealForm();
+    } catch (error) {
+      setMessage("Failed to add meal.");
+      console.error(error);
+    }
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const res = await axios.post(`http://192.168.1.185:8800/meals`, {
+        ...mealData,
+        ingredients: mealData.ingredients,
+      });
+
+      setMessage(res.data.message);
+      resetMealForm();
+      fetchAddedMeal();
+    } catch (error) {
+      setMessage("Failed to add meal.");
+      console.error(error);
+    }
+  };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setMealData((prevData) => ({
       ...prevData,
-      [name]: value
+      [name]: value,
     }));
   };
 
+  // Handle ingredient input changes
   const handleIngredientChange = (index, value) => {
     const updatedIngredients = [...mealData.ingredients];
     updatedIngredients[index] = value; // Update the specific ingredient value
@@ -62,84 +110,46 @@ export default function Meals() {
     }));
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-
-    try {
-      // Send the ingredients data directly as is, without splitting
-      const res = await axios.post("http://192.168.1.185:8800/meals", {
-        ...mealData,
-        ingredients: mealData.ingredients, // Just pass the input as is
-      });
-
-      // Show response message
-      setMessage(res.data.message);
-
-      // Reset form after successful submission
-      setMealData({
-        strMeal: "",
-        strCategory: "",
-        strArea: "",
-        strInstructions: "",
-        strMealThumb: "",
-        strTags: "",
-        strYoutube: "",
-        ingredients: [""], // Reset ingredient input field
-        user_id: user.id, // Assuming user ID is stored
-      });
-      fetchAddedMeal();
-    } catch (error) {
-      setMessage("Failed to add meal.");
-      console.error(error);
-    }
+  const resetMealForm = () => {
+    setMealData({
+      strMeal: "",
+      category_id: "",
+      strArea: "",
+      strInstructions: "",
+      strMealThumb: "",
+      strYoutube: "",
+      ingredients: [""],
+      user_id: user.id,
+    });
   };
 
-  const handleSubmitToReview = async (e) => {
-    e.preventDefault();
-
+  // Fetch added meals
+  const fetchAddedMeal = async (page) => {
+    setLoading(true);
     try {
-      // Send the ingredients data directly as is, without splitting
-      const res = await axios.post("http://192.168.1.185:8800/pending/add", {
-        ...mealData,
-        ingredients: mealData.ingredients, // Just pass the input as is
+      const res = await axios.get(`http://192.168.1.185:8800/meals/user/${user.id}`, {
+        params: {
+          page: page,
+          limit: pageSize,
+        },
       });
-
-      // Show response message
-      setMessage(res.data.message);
-
-      // Reset form after successful submission
-      setMealData({
-        strMeal: "",
-        strCategory: "",
-        strArea: "",
-        strInstructions: "",
-        strMealThumb: "",
-        strTags: "",
-        strYoutube: "",
-        ingredients: [""], // Reset ingredient input field
-        user_id: user.id, // Assuming user ID is stored
-      });
-    } catch (error) {
-      setMessage("Failed to add meal.");
-      console.error(error);
-    }
-  };
-
-  const fetchAddedMeal = async () => {
-    try {
-      const meal = await axios.get(`http://192.168.1.185:8800/meals/user/${user.id}`);
-      setAdded(meal.data.meals); 
+      setAdded(res.data.meals);
+      setTotalPages(res.data.totalPages);
     } catch (err) {
-      console.log(err);
     } finally {
-      setOpen(false);
+      setLoading(false);
     }
+  };
+
+  const handlePageChange = (pageNumber) => {
+    setCurrentPage(pageNumber);
+    fetchAddedMeal(pageNumber);
   };
 
   useEffect(() => {
-    fetchAddedMeal();
-  }, []);
-
+    fetchCategories();
+    fetchAddedMeal(currentPage);
+  }, [currentPage]);
 
   return (
     <Layout>
@@ -155,12 +165,18 @@ export default function Meals() {
                 {added.map((result) => (
                   <div className="meal__list" key={result.idMeal}>
                     <div className="img__con">
-                      <img id={result.idMeal} src={result.strMealThumb} alt={result.strMeal} className="meal__img" />
+                      <img
+                        id={result.idMeal}
+                        src={result.strMealThumb}
+                        alt={result.strMeal}
+                        className="meal__img"
+                        loading="lazy"
+                      />
                     </div>
                     <div className="meal__name">{result.strMeal.toUpperCase()}</div>
                     <div className="content">
                       <div className="content__details">
-                        <div className="meal__cat">Category: {result.strCategory}</div>
+                        <div className="meal__cat">Category: {result.category_name}</div>
                         {result.averageRating ? (
                           <span className="meal__rating">
                             {result.averageRating.toFixed(1)}
@@ -175,16 +191,34 @@ export default function Meals() {
                           </span>
                         )}
                         <Link to={`/recipe/${result.idMeal}`}>
-                          <button className="view__recipe" 
-                            // onClick={() => handleViewRecipe(result)}
-                            >
-                              VIEW RECIPE
-                          </button>
+                          <button className="view__recipe">VIEW RECIPE</button>
                         </Link>
                       </div>
                     </div>
                   </div>
                 ))}
+              </div>
+              {loading && <div className="loading"><Loader/></div>}
+              <div className="pagination">
+                <button
+                  onClick={() => handlePageChange(currentPage - 1)}
+                  disabled={currentPage === 1}
+                  className="page-button"
+                >
+                  Previous
+                </button>
+
+                <span className="current-page">
+                  Page {currentPage} of {totalPages}
+                </span>
+
+                <button
+                  onClick={() => handlePageChange(currentPage + 1)}
+                  disabled={currentPage === totalPages}
+                  className="page-button"
+                >
+                  Next
+                </button>
               </div>
             </div>
           ) : (
@@ -195,53 +229,87 @@ export default function Meals() {
           )}
         </div>
       </div>
+      
       <Popup setTrigger={setOpen} trigger={open}>
         <div className="pop__con">
           <h3>ADD NEW MEAL</h3>
           {message && <p>{message}</p>}
-          <form onSubmit={user.role === "admin" ? handleSubmit : handleSubmitToReview} className="add__container">
-            <div>
-              <label htmlFor="strMeal">Meal Name</label>
-              <input
-                type="text"
-                id="strMeal"
-                name="strMeal"
-                placeholder="Meal Name"
-                value={mealData.strMeal}
-                onChange={handleInputChange}
+          <form
+            onSubmit={user.role === "admin" ? handleSubmit : handleSubmitToReview}
+            className="add__container"
+          >
+            <label>Meal Name:</label>
+            <input
+              type="text"
+              name="strMeal"
+              value={mealData.strMeal}
+              onChange={handleInputChange}
+              autoComplete="off"
+            />
+
+            <div className="categories">
+              <label htmlFor="category_id">Category: </label>
+              <select
+                id="category_id"
+                name="category_id"
+                value={mealData.category_id}
+                style={{padding : "6px"}}
+                onChange={(e) => {
+                  console.log(mealData.category_id);
+                  const selectedCategory = e.target.value;
+                  console.log("KAMOTEEEEEEEEEEEEE", selectedCategory);
+                  console.log("meal data" ,mealData);
+                  
+                  
+                  
+                  
+                  setMealData((prevData) => ({
+                    ...prevData,
+                    category_id: selectedCategory,
+                  }));
+                }}
                 required
-              />
+              >
+                <option value="" disabled>Select Category</option>
+                {categories.map((category) => (
+                  <option key={category.id} value={category.id}>
+                    {category.category_name}
+                  </option>
+                ))}
+                {user.role === 'admin' && <option value="newCategory">New Category</option>}
+              </select>
+              
+              {mealData.category_id === "newCategory" && user.role === "admin" && (
+                <div>
+                  <label htmlFor="newCategory">Add New Category</label>
+                  <input
+                    type="text"
+                    id="newCategory"
+                    name="newCategory"
+                    value={mealData.newCategory}
+                    onChange={handleInputChange}
+                    placeholder="New Category"
+                  />
+                </div>
+              )}
             </div>
-            <div>
-              <label htmlFor="strCategory">Category</label>
-              <input
-                type="text"
-                id="strCategory"
-                name="strCategory"
-                placeholder="Category"
-                value={mealData.strCategory}
-                onChange={handleInputChange}
-                required
-              />
-            </div>
+
             <div>
               <label htmlFor="strArea">Area</label>
               <input
                 type="text"
                 id="strArea"
                 name="strArea"
-                placeholder="Area"
+                placeholder="Area (e.g. American)"
                 value={mealData.strArea}
                 onChange={handleInputChange}
-                required
               />
             </div>
-            <div className="txtarea">
+            <div>
               <label htmlFor="strInstructions">Instructions</label>
               <textarea
                 id="strInstructions"
                 name="strInstructions"
-                placeholder="Instructions"
                 value={mealData.strInstructions}
                 onChange={handleInputChange}
                 required
@@ -255,18 +323,6 @@ export default function Meals() {
                 name="strMealThumb"
                 placeholder="Thumbnail URL"
                 value={mealData.strMealThumb}
-                onChange={handleInputChange}
-                required
-              />
-            </div>
-            <div>
-              <label htmlFor="strTags">Tags</label>
-              <input
-                type="text"
-                id="strTags"
-                name="strTags"
-                placeholder="Tags (comma-separated)"
-                value={mealData.strTags}
                 onChange={handleInputChange}
                 required
               />
@@ -286,10 +342,11 @@ export default function Meals() {
 
             <h4>Ingredients and Measurements (Metric System)</h4>
             <button type="button" onClick={handleAddIngredient} className="btn__add_row">ADD ROW</button>
+
             {mealData.ingredients.map((ing, index) => (
-              <div key={index} style={{ display: "flex", gap: "10px", marginBottom: "10px", alignItems: "center", flexDirection: "row" }}>
-                <div style={{ width: "100%" }}>
+              <div key={index} >
                   <label htmlFor={`ingredient-${index}`}>Ingredient</label>
+                <div style={{ display: "flex", gap: "10px", marginBottom: "10px", alignItems: "center" }}>
                   <input
                     id={`ingredient-${index}`}
                     type="text"
@@ -298,18 +355,17 @@ export default function Meals() {
                     onChange={(e) => handleIngredientChange(index, e.target.value)}
                     required
                   />
-                </div>
-                {mealData.ingredients.length > 1 && (
+                  {mealData.ingredients.length > 1 && (
                   <button className="btn__remove" type="button" onClick={() => handleRemoveIngredient(index)}>
-                    <FaTrash />
+                    <FaTrashAlt />
                   </button>
                 )}
+                </div>
+                
               </div>
             ))}
 
-            <div className="btn_con">
-              <button type="submit" className="btn__add_meal">ADD</button>
-            </div>
+             <button type="submit">{user.role === "admin" ? "Submit" : "Submit for review"}</button>
           </form>
         </div>
       </Popup>

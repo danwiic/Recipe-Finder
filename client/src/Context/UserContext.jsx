@@ -6,8 +6,7 @@ const UserContext = createContext();
 export const UserProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [accessToken, setAccessToken] = useState(null);
-  const [loading, setLoading] = useState(true); // Track loading state.
-  console.log(user);
+  const [loading, setLoading] = useState(true); 
   
 
   const storedUser = localStorage.getItem("user");

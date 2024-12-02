@@ -7,8 +7,6 @@ import userLogo from '/user.png';
 import passLogo from '/password.png';
 import bg from '/bg1.jpg';
 
-
-
 export default function Login() {
   const navigate = useNavigate();
   const { user, setUser, setAccessToken } = useUser();
@@ -30,8 +28,6 @@ export default function Login() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    // Clear any previous errors before submitting
     setError("");
 
     try {
@@ -40,15 +36,12 @@ export default function Login() {
       if (res.data.Status === "Success") {
         const userData = res.data.user;
         const token = res.data.token;
-        
-        console.log(userData);
-        
 
         setUser(userData);
         setAccessToken(token);
 
         localStorage.setItem("user", JSON.stringify(userData));
-        localStorage.setItem("accessToken", token); 
+        localStorage.setItem("accessToken", token);
 
         navigate("/home"); // Redirect to the home page
       } else {
@@ -60,8 +53,23 @@ export default function Login() {
   };
 
   useEffect(() => {
-    user && navigate('/home')
-  })
+    const checkIfLoggedIn = () => {
+      // If user exists, navigate to /home, otherwise to /
+      if (user) {
+        navigate("/home");
+      } else {
+        navigate("/");
+      }
+    };
+  
+    // Run check on user change, but avoid running on initial mount if user is null
+    if (user !== null) {
+      checkIfLoggedIn();
+    }
+  }, [user, navigate]);
+  
+
+  
 
   return (
     <div className="login__container" style={{ backgroundImage: `url(${bg})` }}>
@@ -82,35 +90,34 @@ export default function Login() {
             />
 
             <label className="form__labels">Password</label>
-              <input 
-                className="input__field"
-                style={{ backgroundImage: `url(${passLogo})` }} 
-                type={visible ? "text": "password"} 
-                placeholder="Password" 
-                name="password" 
-                value={login.password}
-                onChange={handleInputChange}
-                required
-              />
-
+            <input 
+              className="input__field"
+              style={{ backgroundImage: `url(${passLogo})` }} 
+              type={visible ? "text" : "password"} 
+              placeholder="Password" 
+              name="password" 
+              value={login.password}
+              onChange={handleInputChange}
+              required
+            />
 
             <div 
               className="show__pass" 
               style={{display: "flex", alignItems: "center", gap: "5px"}}
-              >
-                  <input  onClick={()=>setVisible(prev => !prev)} type="checkbox"/>
-                <label style={{fontWeight: "700", color: "#050300"}}>Show Password</label>
+            >
+              <input onClick={() => setVisible(prev => !prev)} type="checkbox" />
+              <label style={{fontWeight: "700", color: "#050300"}}>Show Password</label>
             </div>
 
             <div className="action">
               <Link to="/recover">Forgot Password?</Link>
               {error && (
                 <p className="error-message" 
-                style={{
-                  color: "red",
-                  fontWeight: "500",
-                  margin: "10px 0 0 0"
-                }}
+                  style={{
+                    color: "red",
+                    fontWeight: "500",
+                    margin: "10px 0 0 0"
+                  }}
                 >
                   {error}
                 </p>

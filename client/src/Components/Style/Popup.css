@@ -50,7 +50,7 @@
     background: transparent;
     font-size: 1.2rem;
     cursor: pointer;
-
+    z-index: 999999;
 }
 
 .close-btn:hover {

@@ -10,10 +10,6 @@ import { useUser } from '../Context/UserContext';
 import { FaHeart } from "react-icons/fa";
 import { FaRegHeart } from "react-icons/fa";
 
-{/* <FaRegHeart />
-<FaHeart />
-useUser */}
-
 export default function Landing() {
     const [search, setSearch] = useState({ search: "" });
     const [results, setResults] = useState([]);
@@ -75,7 +71,6 @@ export default function Landing() {
             const res = await axios.get("http://192.168.1.185:8800/top_rated");
             const topRatedMeal = res.data.topRatedMeals; // Access the topRatedMeals array directly
             setRatedMeal(topRatedMeal); // Update the state with the array of meals
-            console.log("Top Rated Meals:", topRatedMeal); // Log the meals for debugging
         } catch (error) {
             console.error(error);
         } finally {
@@ -184,7 +179,6 @@ export default function Landing() {
         fetchTopMeal()
         fetchTopRatedMeal()
       }, []);
-console.log("results: 1 ", results);
 
     return (
         <div className="recipe__container">
@@ -312,7 +306,7 @@ console.log("results: 1 ", results);
                         <div className="meal__name">{result.strMeal.toUpperCase()}</div>
                         <div className="content">
                             <div className="content__details">
-                            <div className='meal__cat'>Category: {result.strCategory}</div>
+                            <div className='meal__cat'>Category: {result.category_name}</div>
                            
                                 {result.averageRating ? (
                                     <span className='meal__rating'>
@@ -371,7 +365,7 @@ console.log("results: 1 ", results);
  
                                          <div className="content">
                                              <div className="content__details">
-                                                 <div className='meal__cat'>Category: {result.strCategory}</div>
+                                                 <div className='meal__cat'>Category: {result.category_name}</div>
                                                     {result && (
                                                         <div className='fav__count'>
                                                             <div className="p">FAVORITE OF: <span className='no__count'>{result.favoriteCount} User</span> </div>

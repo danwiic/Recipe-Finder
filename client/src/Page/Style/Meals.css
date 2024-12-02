@@ -8,6 +8,15 @@
     .view__recipe{
         width: 100%;
     }
+
+    .pagination{
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        justify-content: center;
+    }
+
+    
     
 }
 
@@ -49,10 +58,24 @@
     overflow: scroll;
     width: 600px;
 
+    h3{
+        position: sticky;
+        top: 0;
+        background-color: #ffffff;
+        padding: 5px;
+    }
+
     .add__container{
         padding: 20px;
         width: 100%;
+        
+        .categories{
+            margin-bottom: 10px;
 
+            label{
+                margin-bottom: 10px;
+            }
+        }
         
 
         .btn_con{
