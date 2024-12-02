@@ -29,7 +29,7 @@ input[type=number] {
 
         
     }
-    button:hover{
+    .btn__back:hover{
         background-color: #395783;
     }
 
@@ -42,14 +42,16 @@ input[type=number] {
         padding: 6px;
         text-align: center;
         width: 100%;
+        border-radius: 6px;
     }
 
     .recovery__container{
         display: flex;
         flex-direction: column;
         align-items: center;
-        gap: 50px;
-        background-color: white;
+        gap: 10px;
+        background-color: rgba(255, 255, 255, 0.664);
+        box-shadow: rgba(0, 0, 0, 0.12) 0px 1px 3px, rgba(0, 0, 0, 0.24) 0px 1px 2px;
         width: 500px;
         margin: auto;
         border-radius: 6px;
@@ -103,6 +105,65 @@ input[type=number] {
             padding: 12px;
             outline: none;
             width: 100%;
+            border: 3px solid #493628;
+            text-align: center;
+            transition: all 0.2s ease;
+        }
+        input:focus {
+            border: 3px solid #395783;
+            transition: all .7 ease;
+        }
+
+        button{
+            padding: 14px 22px;
+            width: 100%;
+            background-color: #5e83bb;
+            cursor: pointer;
+            color: white;
+            border-radius: 4px;
+
+        }
+        button:hover{
+            background-color: #395783;
+        }
+
+        .otp__inputs{
+            display: flex;
+            gap: 5px;
+            padding: 5px;
+
+            
+        }
+    }
+
+
+    .change__password{
+        width: 400px;
+        display: flex;
+        flex-direction: column;
+        padding: 20px;
+        gap: 5px;
+        align-items: center;
+
+        svg{
+            font-size: 5rem;
+            margin: 20px 0px;
+        }
+        input[type=text]{
+            padding: 12px;
+            outline: none;
+            width: 100%;
+        }
+
+        input[type=email]{
+            padding: 12px;
+            outline: none;
+            width: 100%;
+        }
+        input[type=password]{
+            padding: 12px;
+            outline: none;
+            width: 100%;
            
         }
         button{
@@ -116,6 +177,20 @@ input[type=number] {
         }
         button:hover{
             background-color: #395783;
+        }
+
+        .otp__inputs{
+            display: flex;
+            gap: 5px;
+        }
+
+        .show__pass{
+            display: flex;
+            align-items: center;
+            justify-content: start;
+            width: 100%;
+            gap: 5px;
+            margin: 3px 0;
         }
     }
 

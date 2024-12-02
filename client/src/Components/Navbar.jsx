@@ -15,16 +15,18 @@ export default function Navbar({}) {
   const [open, setOpen] = useState(false);
   const navigate = useNavigate(); // Move navigate here to the top level
 
-  const navBar = user && user.role === 'admin' ? [
+  const navBar = user ? (user.role === 'admin' ? [
     { path: '/home', name: "HOME" },
-    { path: '/dashboard/overview', name:'DASHBOARD'},
+    { path: '/dashboard/overview', name: 'DASHBOARD' },
     { path: '/favorites', name: "FAVORITES" },
     { path: '/meals', name: "MEALS" },
   ] : [
     { path: '/home', name: "HOME" },
     { path: '/favorites', name: "FAVORITES" },
     { path: '/meals', name: "MEALS" },
-  ]
+  ]) : [];
+  
+
 
   const [isMenuOpen, setMenuOpen] = useState(false)
 
@@ -81,7 +83,7 @@ export default function Navbar({}) {
         {!isLoginPage && (
           !user ? (
             <NavLink to="/login">
-              <button className="btn__goToLogin">LOGIN</button>
+             
             </NavLink>
           ) : (
             <button 
@@ -133,7 +135,7 @@ export default function Navbar({}) {
           <li>
             {!user ? (
               <NavLink to="/">
-                <button className="btn__goToLogin">LOGIN</button>
+               
               </NavLink>
             ) : (
               <button 

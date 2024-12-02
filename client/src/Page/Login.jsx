@@ -96,14 +96,11 @@ export default function Login() {
 
             <div 
               className="show__pass" 
-              onClick={() => setVisible(!visible)}
               style={{display: "flex", alignItems: "center", gap: "5px"}}
               >
-                <input type="checkbox" />
-                  <label htmlFor="show" style={{fontWeight: "700", color: "#050300"}}>
-                  Show password
-                  </label>
-              </div>
+                  <input  onClick={()=>setVisible(prev => !prev)} type="checkbox"/>
+                <label style={{fontWeight: "700", color: "#050300"}}>Show Password</label>
+            </div>
 
             <div className="action">
               <Link to="/recover">Forgot Password?</Link>
