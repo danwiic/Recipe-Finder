@@ -298,6 +298,19 @@
     display: flex;
     flex-direction: column;
     position: relative;
+
+    .btn__comment{
+        background-color: #479bce;
+        color: white;
+        font-weight: 700;
+        font-size: 1.4rem;
+        border-radius: 0 10px 10px 0;
+        cursor: pointer;
+    }
+
+    .btn__comment:hover{
+        background: #3a7fab;
+    }
   
     .comment__con {
       padding: 5px;
@@ -357,6 +370,7 @@
         border-radius: 10px 0 0 10px;
         border: 1px solid #32251c;
         padding: 10px 10px 10px 15px;
+        border-right: 0;
       }
   
       button {

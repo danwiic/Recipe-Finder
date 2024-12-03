@@ -79,9 +79,11 @@ export default function Meals() {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
+  
     setMealData((prevData) => ({
       ...prevData,
       [name]: value,
+      ...(name === "category_id" && value === "newCategory" ? { newCategory: "" } : {}),
     }));
   };
 
@@ -156,7 +158,7 @@ export default function Meals() {
       <div className="meals__layout">
         <div className="meals__list">
           {added && added.length > 0 ? (
-            <div className="top__meal">
+            <div className="top__meal" style={{marginTop: "0px"}}>
               <div className="header__action">
                 <h3>RECIPES YOU ADDED</h3>
                 <button onClick={() => setOpen(true)} className="btn__add">ADD MEAL</button>
@@ -255,14 +257,7 @@ export default function Meals() {
                 value={mealData.category_id}
                 style={{padding : "6px"}}
                 onChange={(e) => {
-                  console.log(mealData.category_id);
-                  const selectedCategory = e.target.value;
-                  console.log("KAMOTEEEEEEEEEEEEE", selectedCategory);
-                  console.log("meal data" ,mealData);
-                  
-                  
-                  
-                  
+                  const selectedCategory = e.target.value
                   setMealData((prevData) => ({
                     ...prevData,
                     category_id: selectedCategory,
@@ -280,18 +275,19 @@ export default function Meals() {
               </select>
               
               {mealData.category_id === "newCategory" && user.role === "admin" && (
-                <div>
-                  <label htmlFor="newCategory">Add New Category</label>
-                  <input
-                    type="text"
-                    id="newCategory"
-                    name="newCategory"
-                    value={mealData.newCategory}
-                    onChange={handleInputChange}
-                    placeholder="New Category"
-                  />
-                </div>
-              )}
+  <div>
+    <label htmlFor="newCategory">Add New Category</label>
+    <input
+      type="text"
+      id="newCategory"
+      name="newCategory"
+      value={mealData.newCategory || ""}
+      onChange={handleInputChange}
+      placeholder="New Category"
+      required
+    />
+  </div>
+)}
             </div>
 
             <div>

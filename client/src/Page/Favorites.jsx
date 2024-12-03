@@ -105,7 +105,11 @@ export default function Recipe() {
                                         <div className="meal__name">{meal.strMeal.toUpperCase()}</div>
 
                                         <div className="meal__item__layout">
-                                            <img src={meal.strMealThumb} alt={meal.strMeal} />
+                                            <img 
+                                                src={meal.strMealThumb} 
+                                                alt={meal.strMeal}
+                                                className="meal__img"
+                                            />
 
                                                 <div className="ratings">
                                                     <span>

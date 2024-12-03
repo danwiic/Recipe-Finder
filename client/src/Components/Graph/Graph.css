@@ -1,0 +1,23 @@
+.line__graph{
+    display: flex;
+    gap: 5px;
+    align-items: center;
+    margin-bottom: 10px;
+
+    select{
+        padding: 6px;
+        text-align: center;
+    }
+}
+
+.bar__graph{
+    display: flex;
+    gap: 5px;
+    align-items: center;
+    margin-bottom: 10px;
+
+    select{
+        padding: 6px;
+        text-align: center;
+    }
+}

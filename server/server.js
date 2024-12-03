@@ -126,81 +126,73 @@ app.post("/logout", (req, res) => {
 
 // Add meal
 app.post('/meals', (req, res) => {
-  const { 
-    strMeal, 
-    category_id, 
-    strArea, 
-    strInstructions, 
+  const {
+    strMeal,
+    category_id,
+    strArea,
+    strInstructions,
     strMealThumb,
-    strYoutube, 
-    ingredients, 
-    user_id 
+    strYoutube,
+    ingredients,
+    user_id,
+    newCategory, // New field for adding new category
   } = req.body;
 
   // Validate required fields
-  if (!strMeal || !category_id || !ingredients || ingredients.length === 0 || !user_id) {
+  if (!strMeal || !ingredients || ingredients.length === 0 || !user_id) {
     return res.status(400).json({ message: "Missing required fields." });
   }
 
-  // Format ingredients as JSON
   const formattedIngredients = JSON.stringify(ingredients.map(item => item.trim()));
 
-  // Check or insert the category
-  db.query(
-    'SELECT id FROM categories WHERE category_name = ?',
-    [category_id],
-    (err, existingCategory) => {
-      if (err) {
-        console.error("Error checking category:", err);
-        return res.status(500).json({ message: 'Error checking category', error: err });
+  // If category_id is "newCategory", add the new category
+  if (category_id === "newCategory" && newCategory) {
+    db.query(
+      'INSERT INTO categories (category_name) VALUES (?)',
+      [newCategory],
+      (err, result) => {
+        if (err) {
+          console.error("Error inserting category:", err);
+          return res.status(500).json({ message: 'Error inserting category', error: err });
+        }
+        const newCategoryId = result.insertId;
+
+        // Proceed with meal insertion
+        insertMeal(newCategoryId);
       }
+    );
+  } else {
+    // Use the existing category_id
+    insertMeal(category_id);
+  }
 
-      const categoryId = existingCategory.length > 0
-        ? existingCategory[0].id
-        : (function() {
-            return new Promise((resolve, reject) => {
-              db.query(
-                'INSERT INTO categories (category_name) VALUES (?)',
-                [category_id],
-                (err, result) => {
-                  if (err) reject(err);
-                  else resolve(result.insertId);
-                }
-              );
-            });
-          })();
+  function insertMeal(categoryId) {
+    db.query(
+      `INSERT INTO meals (strMeal, category_id, strArea, strInstructions, strMealThumb, strYoutube, ingredients, user_id)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        strMeal,
+        categoryId,
+        strArea,
+        strInstructions,
+        strMealThumb,
+        strYoutube,
+        formattedIngredients,
+        user_id,
+      ],
+      (err, result) => {
+        if (err) {
+          console.error("Error inserting meal data:", err);
+          return res.status(500).json({ message: 'Error inserting meal data', error: err });
+        }
 
-      categoryId.then(async (categoryId) => {
-        // Insert the meal
-        db.query(
-          `INSERT INTO meals (strMeal, category_id, strArea, strInstructions, strMealThumb, strYoutube, ingredients, user_id)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-          [
-            strMeal,
-            categoryId,
-            strArea,
-            strInstructions,
-            strMealThumb,
-            strYoutube,
-            formattedIngredients,
-            user_id
-          ],
-          (err, result) => {
-            if (err) {
-              console.error("Error inserting meal data:", err);
-              return res.status(500).json({ message: 'Error inserting meal data', error: err });
-            }
-
-            res.status(201).json({ message: 'Meal data inserted successfully', id: result.insertId });
-          }
-        );
-      }).catch((err) => {
-        console.error("Error inserting category:", err);
-        return res.status(500).json({ message: 'Error inserting category', error: err });
-      });
-    }
-  );
+        res.status(201).json({ message: 'Meal data inserted successfully', id: result.insertId });
+      }
+    );
+  }
 });
+
+
 
 // Delete meal
 app.delete('/meals/:mealId', (req, res) => {
@@ -992,44 +984,58 @@ app.post('/pending/approve/:id', (req, res) => {
 
     const recipe = results[0];
 
-    // Query to insert into meals table
-    const insertQuery = `
-      INSERT INTO meals (idMeal, strMeal, category_id, strArea, strInstructions, strMealThumb, strYoutube, ingredients, user_id)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `;
-
-    const values = [
-      recipe.id,         // Use the same ID or generate a new one if necessary
-      recipe.strMeal,
-      recipe.category_id, // Use category_id directly from pending_recipes
-      recipe.strArea,
-      recipe.strInstructions,
-      recipe.strMealThumb,
-      recipe.strYoutube,
-      recipe.ingredients,
-      recipe.user_id,
-    ];
-
-    db.query(insertQuery, values, (insertErr) => {
-      if (insertErr) {
-        console.error('Error inserting recipe into meals table:', insertErr);
-        return res.status(500).json({ error: 'Failed to approve the recipe.' });
+    // Ensure that category_id exists in categories table
+    const categoryQuery = 'SELECT * FROM categories WHERE id = ?';
+    db.query(categoryQuery, [recipe.category_id], (categoryErr, categoryResults) => {
+      if (categoryErr) {
+        console.error('Error fetching category:', categoryErr);
+        return res.status(500).json({ error: 'Database query error' });
       }
 
-      // Query to delete from pending_recipes
-      const deleteQuery = 'DELETE FROM pending_recipes WHERE id = ?';
+      if (categoryResults.length === 0) {
+        return res.status(400).json({ error: 'Invalid category for the recipe.' });
+      }
 
-      db.query(deleteQuery, [recipeId], (deleteErr) => {
-        if (deleteErr) {
-          console.error('Error deleting recipe from pending_recipes:', deleteErr);
-          return res.status(500).json({ error: 'Failed to remove recipe from pending list.' });
+      // Now that the category is validated, proceed to insert the recipe into meals table
+      const insertQuery = `
+        INSERT INTO meals (idMeal, strMeal, category_id, strArea, strInstructions, strMealThumb, strYoutube, ingredients, user_id)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `;
+
+      const values = [
+        recipe.id,         // Use the same ID or generate a new one if necessary
+        recipe.strMeal,
+        recipe.category_id, // Category ID should already be valid at this point
+        recipe.strArea,
+        recipe.strInstructions,
+        recipe.strMealThumb,
+        recipe.strYoutube,
+        recipe.ingredients,
+        recipe.user_id,
+      ];
+
+      db.query(insertQuery, values, (insertErr) => {
+        if (insertErr) {
+          console.error('Error inserting recipe into meals table:', insertErr);
+          return res.status(500).json({ error: 'Failed to approve the recipe.' });
         }
 
-        res.status(201).json({ message: 'Recipe approved and moved to meals table.' });
+        // Query to delete from pending_recipes
+        const deleteQuery = 'DELETE FROM pending_recipes WHERE id = ?';
+
+        db.query(deleteQuery, [recipeId], (deleteErr) => {
+          if (deleteErr) {
+            console.error('Error deleting recipe from pending_recipes:', deleteErr);
+            return res.status(500).json({ error: 'Failed to remove recipe from pending list.' });
+          }
+
+          res.status(201).json({ message: 'Recipe approved and moved to meals table.' });
+        });
       });
     });
   });
 });
+
 
 // Reject a recipe by deleting it
 app.delete('/pending/reject/:id', (req, res) => {
@@ -1233,5 +1239,118 @@ app.post('/change-password', (req, res) => {
 
           res.status(200).json({ message: 'Password successfully updated' });
       });
+  });
+});
+
+app.get('/users/filtered', (req, res) => {
+  const { year, quarter } = req.query;
+
+  // Ensure `year` is provided and is a number
+  if (!year || isNaN(year)) {
+    return res.status(400).json({ error: 'Invalid or missing year parameter' });
+  }
+
+  let query = `
+    SELECT 
+      MONTH(created_at) AS month, 
+      COUNT(*) AS user_count
+    FROM users
+    WHERE YEAR(created_at) = ? AND role = "user"
+  `;
+  
+  // Add quarter filtering if it's provided
+  if (quarter) {
+    const monthRanges = {
+      1: [1, 2, 3],  // Q1: Jan-Mar
+      2: [4, 5, 6],  // Q2: Apr-Jun
+      3: [7, 8, 9],  // Q3: Jul-Sep
+      4: [10, 11, 12] // Q4: Oct-Dec
+    };
+
+    // If quarter is valid, filter by that range
+    const months = monthRanges[quarter] || [];
+    if (months.length > 0) {
+      query += ` AND MONTH(created_at) IN (${months.join(',')})`;
+    } else {
+      return res.status(400).json({ error: 'Invalid quarter parameter' });
+    }
+  }
+
+  query += ` GROUP BY MONTH(created_at) ORDER BY MONTH(created_at)`;
+
+
+  db.query(query, [year], (err, results) => {
+    if (err) {
+      console.error('Error fetching user data:', err);
+      return res.status(500).json({ error: 'Database query error' });
+    }
+
+    const userCounts = new Array(12).fill(0);  // Default to 0 for all months
+
+    // Map the result to the correct month
+    results.forEach(row => {
+      userCounts[row.month - 1] = row.user_count;
+    });
+
+    // Respond with the user counts array
+    res.json(userCounts);
+  });
+});
+
+app.get('/users/years', (req, res) => {
+  const query = 'SELECT DISTINCT YEAR(created_at) AS year FROM users WHERE YEAR(created_at) >= 2024 ORDER BY year DESC';
+  db.query(query, (err, results) => {
+    if (err) {
+      console.error('Error fetching years:', err);
+      return res.status(500).json({ error: 'Database query error' });
+    }
+    
+    const years = results.map(row => row.year);
+    res.json(years);
+  });
+});
+
+app.get('/recipes/stats', (req, res) => {
+  const { year } = req.query; // For filtering by year (optional)
+  const query = `
+      SELECT 
+          MONTH(created_at) AS month,
+          COUNT(*) AS recipes_uploaded
+      FROM meals
+      WHERE YEAR(created_at) = ?
+      GROUP BY MONTH(created_at)
+      ORDER BY month ASC
+  `;
+  
+  // If no year is provided, use the current year by default
+  const queryParams = [year || new Date().getFullYear()];
+
+  db.query(query, queryParams, (err, result) => {
+      if (err) {
+          console.error('Error fetching data:', err);
+          return res.status(500).send('Error fetching data');
+      }
+
+      // Send the result as the response
+      res.json(result);
+  });
+});
+
+app.get('/recipes/years', (req, res) => {
+  const query = `
+      SELECT DISTINCT YEAR(created_at) AS year
+      FROM meals
+      ORDER BY year DESC
+  `;
+
+  db.query(query, (err, result) => {
+      if (err) {
+          console.error('Error fetching years:', err);
+          return res.status(500).send('Error fetching years');
+      }
+
+      // Send the list of years as the response
+      const years = result.map(item => item.year);
+      res.json(years);
   });
 });

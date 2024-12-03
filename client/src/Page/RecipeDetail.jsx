@@ -142,8 +142,8 @@ export default function MealDetail() {
   const fetchNutrition = async (meal) => {
   
       try {
-        const appId = 'ae20a581'
-        const appKey = 'a2ecf5215baa651a98ebbdeb09d2f03c'
+        const appId = 'd7d0bb36'
+        const appKey = '78cf4eefe070b141a8a2f5733b64383e'
 
         const response = await axios.post(
           `https://api.edamam.com/api/nutrition-details?app_id=${appId}&app_key=${appKey}`,
@@ -385,8 +385,7 @@ export default function MealDetail() {
         <div className="comment__layout">
           {comments && comments.length > 0 ? (
             <div className='comment__con'>
-          {  comments.map((comment, index) => (
-             
+            {comments.map((comment, index) => (
              <div className="comment">
                <span className='title'>By: {comment.username} 
                   {user.role ==='admin' && (
@@ -399,8 +398,7 @@ export default function MealDetail() {
                </span>
                <div className='comments' key={index}>{comment.comment_text}<MdReport /></div>
              </div>
-       
-       ))}
+           ))}
             </div> 
           ) : (
             <div className="comments">No comments yet. Be the first to comment!</div>
@@ -415,7 +413,7 @@ export default function MealDetail() {
               onChange={(e) => setAddComment(e.target.value)}
               placeholder='Write a comment...'
                />
-            <button><LiaCommentSolid /></button>
+            <button className='btn__comment'><LiaCommentSolid /></button>
           </form>
         </div>
       </Popup>
